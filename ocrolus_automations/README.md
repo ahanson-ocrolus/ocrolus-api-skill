@@ -2,6 +2,51 @@
 
 Production-grade Python framework for Ocrolus API automations. Each automation is a self-contained module runnable from the CLI. Shared logic (auth, retries, streaming) lives in a common client and utilities.
 
+## Using the shared executable (macOS)
+
+If you were given the **Transfer Book Automation** app:
+
+1. Double-click the app (or right-click → Open the first time).
+2. Enter Source Org + Target Org credentials, Source Book UUID, and Target Book Name.
+3. Click **Run Transfer** and confirm the upload when prompted.
+
+Notes:
+- Credentials are stored in your macOS Keychain (per org) and only need to be entered once.
+- Use **Clear Saved Credentials** to remove stored org credentials (confirmation required).
+
+## Developer setup (from source)
+
+Run the bootstrap script to create a venv, upgrade pip, and install dev deps:
+
+```bash
+./scripts/bootstrap.sh
+```
+
+Then activate:
+
+```bash
+source .venv/bin/activate
+```
+
+Build the macOS executable (single file):
+
+```bash
+./scripts/build_mac.sh
+```
+
+To build a different entrypoint or app name:
+
+```bash
+./scripts/build_mac.sh src/ocrolus_automations/gui.py "Transfer Book Automation"
+```
+
+## Troubleshooting (macOS)
+
+- **App won’t open / “unidentified developer” warning**: Right-click the app → **Open** → **Open** again to approve the app.
+- **Credentials not saving**: Verify you can access macOS Keychain and that the app is allowed to store passwords.
+- **Transfer failed after book creation**: The app will show the new book UUID; delete that book in Ocrolus before re-running.
+- **Need help or found a bug?** Reach out to Adam Hanson with any feedback or bugs detected.
+
 ## Features
 
 - **CLI**: Typer-based `move-book` and `list-automations`; run via `python -m ocrolus_automations` or `ocrolus-auto`
@@ -68,6 +113,28 @@ python -m ocrolus_automations move-book \
 | `ocrolus-auto move-book --source-book-uuid X --target-book-name "Y"` | Copy book from source org to new book in target org |
 | `ocrolus-auto move-book ... --dry-run` | Print actions without creating book or uploading |
 | `ocrolus-auto move-book ... --max-docs 10` | Transfer at most 10 documents |
+
+## GUI app (macOS)
+
+Run the Tkinter GUI for a simple, shareable internal tool:
+
+```bash
+ocrolus-auto-gui
+```
+
+- Credentials are saved per-org in the OS keychain (via `keyring`).
+- Use **Clear Saved Credentials** to remove stored credentials for the current orgs.
+- A confirmation modal appears before uploads begin.
+
+## Build a macOS single-file executable
+
+```bash
+cd ocrolus_automations
+pip install -e ".[dev]"
+pyinstaller --onefile --windowed -n "Transfer Book Automation" -m ocrolus_automations.gui
+```
+
+The executable will be located in `dist/Transfer Book Automation`.
 
 ## Configuration
 

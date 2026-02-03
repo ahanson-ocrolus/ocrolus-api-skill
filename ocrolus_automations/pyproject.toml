@@ -26,16 +26,19 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "tenacity>=8.2.0",
     "python-dotenv>=1.0.0",
+    "keyring>=24.3.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pyinstaller>=6.0.0",
 ]
 
 [project.scripts]
 ocrolus-auto = "ocrolus_automations.cli:app"
+ocrolus-auto-gui = "ocrolus_automations.gui:main"
 
 [project.urls]
 Repository = "https://github.com/example/ocrolus-automations"
