@@ -176,6 +176,16 @@ Average response time: ~680ms per endpoint.
 
 ---
 
+## OpenAPI Spec Comparison
+
+We compared our generated spec against an official Ocrolus `openapi.yaml` (OpenAPI 3.1.1, 9676 lines, 181 schemas). The official spec is authoritative — it uses the correct endpoint paths (e.g., `/v1/book/add`), has full request/response schemas with field-level types, and confirms the v1 API uses query-param style (e.g., `/v1/document/cancel?doc_uuid=...` not `/v1/document/{doc_uuid}/cancel`).
+
+The official spec is included at `docs/ocrolus-api-official-openapi3.yaml`. Our generated spec remains at `docs/ocrolus-api-openapi3.yaml` as a lightweight reference with operationIds and explicit server URLs that the official spec lacks.
+
+Key finding: the official spec also confirms `/v1/book/remove` (not `/v1/book/delete`) and `/v1/book/info` (not `/v1/book/{book_pk}`), suggesting more endpoint corrections may be needed for production use beyond what we discovered.
+
+---
+
 ## Recommendations for the Skill Toolkit
 
 1. **Fix `/v1/book/create` → `/v1/book/add`** in endpoints.md, ocrolus_client.py, and SKILL.md
