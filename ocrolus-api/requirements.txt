@@ -1,0 +1,8 @@
+# Core (required)
+requests>=2.28
+
+# Webhooks (optional -- needed for webhook_setup.py and webhook_verifier.py)
+flask>=2.3
+
+# Testing (optional -- needed for running test suite)
+pytest>=7.0

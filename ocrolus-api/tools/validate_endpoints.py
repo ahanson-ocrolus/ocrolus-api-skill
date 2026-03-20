@@ -538,7 +538,7 @@ def main():
         print(f"\nResults saved to {args.output}")
 
     print("\nDone. Update references/endpoints.md, references/webhooks.md,")
-    print("references/coverage-matrix.md, and scripts/ocrolus_client.py")
+    print("references/coverage-matrix.md, and ocrolus_client.py")
     print("with the confirmed paths above.")
 
 

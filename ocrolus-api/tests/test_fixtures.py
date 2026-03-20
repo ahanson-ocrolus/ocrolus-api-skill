@@ -27,9 +27,9 @@ from typing import Optional
 
 import pytest
 
-# Import the SDK client
+# Import the SDK client (top-level ocrolus_client.py)
 import sys
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ocrolus_client import OcrolusClient, OcrolusError, verify_webhook_signature
 
 

@@ -7,11 +7,11 @@ Generates OpenAPI 3.0.3 (YAML) and Swagger 2.0 (JSON) specs from the
 Ocrolus API endpoint inventory.
 
 Usage:
-    python scripts/generate_openapi.py
-    python scripts/generate_openapi.py --output-dir ./docs
-    python scripts/generate_openapi.py --format openapi3
-    python scripts/generate_openapi.py --format swagger2
-    python scripts/generate_openapi.py --format both
+    python maintenance/generate_openapi.py
+    python maintenance/generate_openapi.py --output-dir ./docs
+    python maintenance/generate_openapi.py --format openapi3
+    python maintenance/generate_openapi.py --format swagger2
+    python maintenance/generate_openapi.py --format both
 """
 
 import argparse

@@ -10,11 +10,11 @@ Usage:
     export OCROLUS_CLIENT_ID="your_id"
     export OCROLUS_CLIENT_SECRET="your_secret"
 
-    python scripts/health_check.py
-    python scripts/health_check.py --output-dir ./reports
-    python scripts/health_check.py --webhooks --write-paths
-    python scripts/health_check.py --repeat 5 --interval 120
-    python scripts/health_check.py --html-only
+    python tools/health_check.py
+    python tools/health_check.py --output-dir ./reports
+    python tools/health_check.py --webhooks --write-paths
+    python tools/health_check.py --repeat 5 --interval 120
+    python tools/health_check.py --html-only
 """
 
 import argparse

@@ -14,8 +14,12 @@ import requests
 AUTH_URL = "https://auth.ocrolus.com/oauth/token"
 BASE_URL = "https://api.ocrolus.com"
 
-CLIENT_ID = os.environ.get("OCROLUS_CLIENT_ID", "nZRFHcejf8oyms9x5HarNQkX7oCBNuOt")
-CLIENT_SECRET = os.environ.get("OCROLUS_CLIENT_SECRET", "1jz0sNp-ohTnLKBoDbP-woEl9aFY33BX6oTSxBaqY5jRdBC-Fg3Rs_MmKaHDn9xU")
+CLIENT_ID = os.environ.get("OCROLUS_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("OCROLUS_CLIENT_SECRET")
+
+if not CLIENT_ID or not CLIENT_SECRET:
+    print("ERROR: Set OCROLUS_CLIENT_ID and OCROLUS_CLIENT_SECRET environment variables")
+    sys.exit(1)
 
 
 def get_token():

@@ -257,11 +257,11 @@ All v1 endpoints support both path-param and query-param styles:
 
 ```bash
 # 1. Run health check with webhook validation
-python scripts/health_check.py --webhooks
+python tools/health_check.py --webhooks
 
 # 2. Run endpoint validation with webhook event discovery
-python scripts/validate_endpoints.py --webhooks
+python tools/validate_endpoints.py --webhooks
 
 # 3. Full write-path validation (creates/deletes a test book)
-python scripts/validate_endpoints.py --write-paths
+python tools/validate_endpoints.py --write-paths
 ```
