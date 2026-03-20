@@ -155,9 +155,13 @@ class OcrolusClient:
     # BOOK OPERATIONS (v1, uses book_pk integer)
     # =========================================================================
 
-    def create_book(self, name: str, book_type: str = "STANDARD", **kwargs) -> dict:
-        """Create a new Book. Returns dict with 'pk' (int) and 'uuid' (str)."""
-        return self._post("/v1/book/create", json={"name": name, "book_type": book_type, **kwargs})
+    def create_book(self, name: str, **kwargs) -> dict:
+        """Create a new Book. Returns dict with 'pk' (int) and 'uuid' (str).
+
+        Note: The endpoint is /v1/book/add (NOT /v1/book/create which returns 404).
+        The 'book_type' parameter is not accepted; books default to 'DEFAULT' type.
+        """
+        return self._post("/v1/book/add", json={"name": name, **kwargs})
 
     def get_book(self, book_pk: int) -> dict:
         """Get Book information by pk."""

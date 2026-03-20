@@ -12,19 +12,42 @@ and test fixtures.
 ocrolus-api/
   SKILL.md                              # Skill definition (for Claude Code)
   README.md                             # This file
+  FINDINGS.md                           # Live testing findings and API corrections
   references/
-    endpoints.md                        # Full endpoint inventory
+    endpoints.md                        # Full endpoint inventory (VALIDATED)
     detect.md                           # Fraud detection: signals, scores, reason codes
-    webhooks.md                         # Webhook setup, signature verification, events
-    coverage-matrix.md                  # Endpoint coverage tracking
+    webhooks.md                         # Webhook setup, events, payloads (VALIDATED)
+    coverage-matrix.md                  # Endpoint coverage tracking (VALIDATED)
   scripts/
     ocrolus_client.py                   # Python SDK -- importable module, 74 methods
-    webhook_verifier.py                 # Webhook receiver with HMAC-SHA256 verification
-    test_fixtures.py                    # pytest suite for integration testing
     validate_endpoints.py               # Endpoint validation against your live tenant
+    health_check.py                     # Comprehensive API health check (console/JSON/HTML)
+    webhook_setup.py                    # Webhook listener, ngrok tunnel, registration
+    webhook_verifier.py                 # Production webhook receiver with HMAC-SHA256
+    generate_openapi.py                 # OpenAPI 3.0 / Swagger 2.0 spec generator
+    test_fixtures.py                    # pytest suite for integration testing
+  docs/
+    ocrolus-api-openapi3.json           # Generated OpenAPI 3.0 spec
+    ocrolus-api-openapi3.yaml           # Generated OpenAPI 3.0 spec (YAML)
+    ocrolus-api-swagger2.json           # Generated Swagger 2.0 spec
   examples/
     widget_app.py                       # Widget embedding sample (Flask)
+  reports/                              # Generated reports (gitignored)
+    webhook-events/events.jsonl         # Persistent webhook event log
+    webhook-events/book-reports/        # Auto-fetched book analytics
 ```
+
+## Key Corrections from Live Testing
+
+> See [FINDINGS.md](FINDINGS.md) for the complete report.
+
+| Issue | Documented | Actual (Confirmed) |
+|-------|-----------|-------------------|
+| Book create endpoint | `/v1/book/create` | **`/v1/book/add`** |
+| Upload book identifier field | `book_pk` | **`pk`** |
+| Auth request format | JSON with audience | **Form-encoded, no audience** |
+| Webhook event field name | `event_type` | **`event_name`** |
+| Upload path style | `/v1/book/{pk}/upload/pdf` | **404** — use `/v1/book/upload` with `pk` in form data |
 
 ---
 
@@ -60,109 +83,116 @@ export OCROLUS_WIDGET_CLIENT_SECRET="your_widget_client_secret"
 
 ---
 
-## Required Setup: Two Validation Steps
+## Setup
 
-This toolkit was built from Ocrolus public documentation, which returned
-inconsistent results for some endpoint paths and webhook event names.
-**Before using this in production, you must run two validation steps against
-your live Ocrolus tenant.** This takes about 5 minutes.
-
-### Step 1: Validate Endpoint Paths
-
-Some endpoint paths have conflicting documentation (e.g., `/v1/book/create`
-vs `POST /v1/books`, query-param vs path-param styles). The validation script
-probes your tenant to determine which paths actually work.
+### Prerequisites
 
 ```bash
-# Basic validation (read-only, no side effects):
+pip3 install requests flask
+brew install ngrok  # for webhook testing (optional)
+```
+
+### 1. Set Credentials
+
+```bash
+export OCROLUS_CLIENT_ID="your_client_id"
+export OCROLUS_CLIENT_SECRET="your_client_secret"
+```
+
+### 2. Run Health Check
+
+The health check probes all 78 API endpoints and generates console, JSON, and HTML reports with export buttons.
+
+```bash
+# Basic health check (console + JSON + HTML reports)
+python scripts/health_check.py
+
+# Include webhook operational validation
+python scripts/health_check.py --webhooks
+
+# Output options
+python scripts/health_check.py --output-dir ./reports
+python scripts/health_check.py --html-only
+python scripts/health_check.py --json-only
+python scripts/health_check.py --console-only
+
+# Repeated monitoring
+python scripts/health_check.py --repeat 5 --interval 120
+```
+
+The HTML report includes **Export JSON**, **Export CSV**, and **Save HTML Snapshot** buttons for archiving results.
+
+### 3. Set Up Webhook Listener
+
+The webhook listener receives real-time event notifications from Ocrolus as documents are processed.
+
+```bash
+# Option A: Full auto setup (starts listener + ngrok tunnel + registers with Ocrolus)
+python scripts/webhook_setup.py auto
+
+# Option B: Manual setup
+# Terminal 1: Start listener
+python scripts/webhook_setup.py listen --port 8080
+
+# Terminal 2: Start ngrok
+ngrok http 8080
+
+# Terminal 3: Register with Ocrolus
+python scripts/webhook_setup.py register --url https://YOUR-URL.ngrok-free.dev/webhooks/ocrolus
+```
+
+**IMPORTANT: After registration, you must subscribe to events in the Ocrolus dashboard:**
+1. Go to Ocrolus Dashboard > Settings > Webhooks
+2. Click Edit on your webhook
+3. Select the event types you want to receive (e.g., `book.completed`, `document.verification_succeeded`)
+4. Save
+
+Without this manual step, no events will be delivered even though the webhook is registered.
+
+#### Webhook Dashboard & Exports
+
+Once the listener is running:
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8080/activity` | Live activity dashboard (auto-refreshes every 15s) |
+| `http://localhost:8080/health` | JSON health/stats endpoint |
+| `http://localhost:8080/export/json` | Download all events as JSON |
+| `http://localhost:8080/export/csv` | Download all events as CSV |
+| `http://localhost:8080/export/html` | Download static HTML snapshot |
+
+Events are persisted to `reports/webhook-events/events.jsonl` and survive listener restarts.
+
+#### Auto-Fetch on Book Completion
+
+When a `book.verified` or `book.completed` webhook arrives, the listener automatically:
+1. Fetches the book summary via `/v2/book/{uuid}/summary`
+2. Fetches enriched transactions via `/v2/book/{uuid}/enriched_txns`
+3. Saves the combined report to `reports/webhook-events/book-reports/`
+
+### 4. Generate API Documentation
+
+Generate OpenAPI 3.0 and Swagger 2.0 specs from the endpoint definitions:
+
+```bash
+python scripts/generate_openapi.py
+# Output: docs/ocrolus-api-openapi3.json, .yaml, and swagger2.json
+```
+
+### 5. Validate Endpoints on Your Tenant
+
+If running on a different tenant, validate that all endpoints match:
+
+```bash
+# Read-only validation
 python scripts/validate_endpoints.py
 
-# Example output:
-#   [OK]  200          /v1/books                                    List Books
-#   [OK]  400  [POST]  /v1/book/create                              Create Book  (route exists, rejected empty payload)
-#   [XX]  404  [POST]  /v1/books                                    (alt)
-#   [OK]  200          /v1/book/status                               Book Status (query param)
-#   [XX]  404          /v1/book/1/status                             Book Status (path param)
-#   ...
-#   PATH CONFLICTS:
-#     Create Book:  ** BOTH paths responded -- use --write-paths to disambiguate **
-#       /v1/book/create     -> YES
-#       /v1/books            -> YES (may be the list endpoint, not create)
-
-# Full validation (creates + deletes a test book to definitively resolve write paths):
+# Full validation (creates + deletes a test book)
 python scripts/validate_endpoints.py --write-paths
 
-# Example output:
-#   --- LIVE WRITE-PATH PROBING ---
-#   Creating test book...
-#   [OK] 201  /v1/book/create -- book created
-#   [XX] 400  /v1/books -- {"error": "..."}
-#   Test book: pk=67890, uuid=abc-123-...
-#   [OK] 200  /v1/book/status?book_pk=67890
-#   [XX] 404  /v1/book/67890/status
-#   Cleaning up test book...
-#   [OK] Test book deleted
-```
-
-**What this does:**
-- Authenticates against your tenant
-- **GET endpoints:** sends GET, checks response
-- **POST/PUT/DELETE endpoints:** sends the actual HTTP method with an empty body.
-  A 400 "bad request" means the route exists (it tried to process your request).
-  A 404 means the route doesn't exist. This correctly distinguishes write paths.
-- For endpoints with conflicting docs, tests BOTH variants
-- With `--write-paths`: creates ONE test book to definitively resolve create/status/transactions
-  path conflicts, then deletes it
-
-**After running:**
-1. Open `references/endpoints.md`
-2. For any row marked `# NEEDS LIVE VALIDATION`, update the path to whichever
-   variant the script confirmed
-3. Open `scripts/ocrolus_client.py` and update the corresponding method's path
-4. Open `references/coverage-matrix.md` and change the `:warning:` rows to
-   `:white_check_mark:` with the confirmed path
-5. Save the raw output for your records:
-   ```bash
-   python scripts/validate_endpoints.py --output validation_results.json
-   ```
-
-### Step 2: Validate Webhook Event Names
-
-The webhook event names in this toolkit (e.g., `document.verification_complete`,
-`book.processing_complete`) were assembled from scattered documentation references.
-**If the actual event names differ, your webhook handlers will silently ignore
-real traffic.** This step discovers the canonical names from your tenant.
-
-```bash
-# Run with --webhooks flag
+# Discover webhook event names
 python scripts/validate_endpoints.py --webhooks
-
-# Example output:
-#   WEBHOOK EVENT DISCOVERY
-#   Canonical event names from /v1/account/settings/webhooks/events:
-#     - document.verification_complete
-#     - document.classification_complete
-#     - book.complete
-#     ...
-#   ** Use these exact strings in your webhook handlers **
 ```
-
-**What this does:**
-- Calls the List Webhook Events endpoint on your tenant
-- Returns the exact event type strings that Ocrolus will send in production payloads
-- Does NOT register or modify any webhooks
-
-**After running:**
-1. Open `references/webhooks.md` > "Event Types" section
-2. Replace the unvalidated event names with the canonical names from the output
-3. Open `scripts/webhook_verifier.py` and update the `@handler.on("...")` decorators
-   with the validated event strings
-4. If the validation output reports a different event type field name (e.g., `event_name`
-   instead of `event_type`), set `OCROLUS_EVENT_TYPE_FIELD` accordingly -- the handler
-   and reference doc patterns already read from this env var
-
-**Note:** If the List Events endpoint returns empty or errors, you may need to
-register at least one webhook first (via Dashboard or API) before events are listed.
 
 ---
 

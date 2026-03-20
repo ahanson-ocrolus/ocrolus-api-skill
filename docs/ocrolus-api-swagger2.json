@@ -1,0 +1,3004 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Ocrolus API",
+    "description": "Ocrolus document automation platform API. Covers Classify, Capture, Detect, and Analyze capabilities.",
+    "version": "3.0.0",
+    "contact": {
+      "name": "Ocrolus",
+      "url": "https://docs.ocrolus.com"
+    }
+  },
+  "host": "api.ocrolus.com",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Bearer JWT token from OAuth 2.0 client_credentials grant"
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Book Operations"
+    },
+    {
+      "name": "Document Upload"
+    },
+    {
+      "name": "Classification"
+    },
+    {
+      "name": "Data Extraction"
+    },
+    {
+      "name": "Fraud Detection"
+    },
+    {
+      "name": "Cash Flow Analytics"
+    },
+    {
+      "name": "Income Calculations"
+    },
+    {
+      "name": "Tag Management"
+    },
+    {
+      "name": "Encore / Book Copy"
+    },
+    {
+      "name": "Webhooks (Org)"
+    },
+    {
+      "name": "Webhooks (Account)"
+    }
+  ],
+  "paths": {
+    "/oauth/token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "grantToken",
+        "summary": "Obtain OAuth 2.0 Bearer Token",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "grant_type",
+            "in": "formData",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "client_id",
+            "in": "formData",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "client_secret",
+            "in": "formData",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token granted"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "description": "OAuth 2.0 client_credentials grant. Returns JWT with 24h expiry. Refresh at 12h."
+      }
+    },
+    "/v1/book/create": {
+      "post": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "createBook",
+        "summary": "Create a new Book",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "book_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns dict with book_pk (int) and book_uuid (str).",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/delete": {
+      "post": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "deleteBook",
+        "summary": "Delete a Book",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/update": {
+      "post": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "updateBook",
+        "summary": "Update Book properties",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/{book_pk}": {
+      "get": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "getBook",
+        "summary": "Get Book information",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/books": {
+      "get": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "listBooks",
+        "summary": "List all Books",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/status": {
+      "get": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "getBookStatus",
+        "summary": "Get Book processing status",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "query",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Some tenants may use /v1/book/{book_pk}/status instead. Run validate_endpoints.py to confirm."
+      }
+    },
+    "/v1/book/loan/{loan_id}": {
+      "get": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "getBookFromLoan",
+        "summary": "Get Book associated with a loan",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Loan identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/{book_pk}/loan": {
+      "get": {
+        "tags": [
+          "Book Operations"
+        ],
+        "operationId": "getLoanFromBook",
+        "summary": "Get loan details from a Book",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/upload": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "uploadPdf",
+        "summary": "Upload a PDF document",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "upload": {
+                  "type": "file"
+                },
+                "form_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Max file size: 200MB. form_type is optional; cannot be used for bank statements.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/upload/mixed": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "uploadMixedPdf",
+        "summary": "Upload a mixed document PDF",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "upload": {
+                  "type": "file"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Contains multiple document types in a single PDF.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/upload/paystub": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "uploadPaystub",
+        "summary": "Upload a pay stub PDF",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "upload": {
+                  "type": "file"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/upload/image": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "uploadImage",
+        "summary": "Upload an image",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "upload": {
+                  "type": "file"
+                },
+                "image_group": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/finalize-image-group": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "finalizeImageGroup",
+        "summary": "Finalize an image group",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                },
+                "image_group": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/upload/plaid": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "uploadPlaidJson",
+        "summary": "Upload Plaid aggregator JSON",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "book_pk": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/import/plaid/asset": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "importPlaidAsset",
+        "summary": "Import Plaid Asset Report",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "audit_copy_token": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Production only. Requires auditor_id: 'ocrolus'.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/document/{doc_uuid}/cancel": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "cancelDocument",
+        "summary": "Cancel document verification",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/document/{doc_uuid}/delete": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "deleteDocument",
+        "summary": "Delete a document",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/document/{doc_uuid}/download": {
+      "get": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "downloadDocument",
+        "summary": "Download a document file",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/document/{doc_uuid}/upgrade": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "upgradeDocument",
+        "summary": "Upgrade document processing type",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "target_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/document/mixed/upgrade": {
+      "post": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "upgradeMixedDocument",
+        "summary": "Upgrade mixed document processing",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mixed_doc_id": {
+                  "type": "string"
+                },
+                "target_type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/document/mixed/status": {
+      "get": {
+        "tags": [
+          "Document Upload"
+        ],
+        "operationId": "getMixedDocumentStatus",
+        "summary": "Get mixed document status",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "mixed_doc_id",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "Mixed document ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/book/{book_uuid}/classification-summary": {
+      "get": {
+        "tags": [
+          "Classification"
+        ],
+        "operationId": "getBookClassification",
+        "summary": "Get book classification summary",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Identifies 300+ document types with confidence scores (0-1)."
+      }
+    },
+    "/v2/mixed-document/{mixed_doc_uuid}/classification-summary": {
+      "get": {
+        "tags": [
+          "Classification"
+        ],
+        "operationId": "getMixedDocClassification",
+        "summary": "Get mixed doc classification summary",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "mixed_doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Mixed document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/index/mixed-doc/{mixed_doc_uuid}/summary": {
+      "get": {
+        "tags": [
+          "Classification"
+        ],
+        "operationId": "getGroupedMixedDocSummary",
+        "summary": "Get grouped mixed doc summary",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "mixed_doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Mixed document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Organizes forms into logical groups with uniqueness values."
+      }
+    },
+    "/v1/book/{book_pk}/forms": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getBookForms",
+        "summary": "Get book form data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/{book_pk}/paystubs": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getBookPaystubs",
+        "summary": "Get book pay stub data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/document/{doc_uuid}/forms": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getDocumentForms",
+        "summary": "Get document form data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/document/{doc_uuid}/paystubs": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getDocumentPaystubs",
+        "summary": "Get document pay stub data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/form/{form_uuid}/fields": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getFormFields",
+        "summary": "Get form field data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "form_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Form UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns confidence scores per field (0-1)."
+      }
+    },
+    "/v1/paystub/{paystub_uuid}": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getPaystub",
+        "summary": "Get pay stub data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "paystub_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Pay stub UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/{book_pk}/transactions": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "getBookTransactions",
+        "summary": "Get book transactions",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/detect/book/{book_uuid}/signals": {
+      "get": {
+        "tags": [
+          "Fraud Detection"
+        ],
+        "operationId": "getBookFraudSignals",
+        "summary": "Get book-level fraud signals",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns authenticity scores (0-100), reason codes, and signal types for all documents."
+      }
+    },
+    "/v2/detect/document/{doc_uuid}/signals": {
+      "get": {
+        "tags": [
+          "Fraud Detection"
+        ],
+        "operationId": "getDocumentFraudSignals",
+        "summary": "Get document-level fraud signals",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "doc_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Document UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/detect/visualization/{visualization_uuid}": {
+      "get": {
+        "tags": [
+          "Fraud Detection"
+        ],
+        "operationId": "getFraudVisualization",
+        "summary": "Get fraud signal visualization",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "parameters": [
+          {
+            "name": "visualization_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Visualization UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns binary image with fraud signal overlays. Cannot be hotlinked."
+      }
+    },
+    "/v1/book/{book_uuid}/suspicious-activity-flags": {
+      "get": {
+        "tags": [
+          "Fraud Detection"
+        ],
+        "operationId": "getSuspiciousActivityFlags",
+        "summary": "Get suspicious activity flags (LEGACY)",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "deprecated": true,
+        "description": "DEPRECATED. Use /v2/detect/ endpoints instead."
+      }
+    },
+    "/v2/book/{book_uuid}/summary": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getBookSummary",
+        "summary": "Get cash flow analytics summary",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns daily balances, PII, and time series data."
+      }
+    },
+    "/v2/book/{book_uuid}/cash_flow_features": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getCashFlowFeatures",
+        "summary": "Get cash flow features",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "min_days_to_include",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Min days for most recent month (default 0, use 32 for full months only)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/book/{book_uuid}/enriched_txns": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getEnrichedTransactions",
+        "summary": "Get enriched transactions",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns transactions with categories and tags."
+      }
+    },
+    "/v2/book/{book_uuid}/cash_flow_risk_score": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getRiskScore",
+        "summary": "Get cash flow risk score",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns probability of default."
+      }
+    },
+    "/v2/book/{book_uuid}/benchmarking": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getBenchmarking",
+        "summary": "Get cash flow benchmarking (Beta)",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "NAICS4-based benchmarking. Beta feature."
+      }
+    },
+    "/v2/book/{book_uuid}/lender_analytics/xlsx": {
+      "get": {
+        "tags": [
+          "Cash Flow Analytics"
+        ],
+        "operationId": "getAnalyticsExcel",
+        "summary": "Download SMB analytics Excel",
+        "produces": [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Returns .xlsx binary content."
+      }
+    },
+    "/v2/book/{book_uuid}/income-calculations": {
+      "get": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "getIncomeCalculations",
+        "summary": "Get income calculations",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/book/{book_uuid}/income-summary": {
+      "get": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "getIncomeSummary",
+        "summary": "Get income summary",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/book/{book_uuid}/income-entity": {
+      "post": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "configureIncomeEntity",
+        "summary": "Configure income entity",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "config": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v2/book/{book_uuid}/income-guideline": {
+      "put": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "saveIncomeGuideline",
+        "summary": "Save income guideline",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "guideline": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v2/book/{book_uuid}/self-employed-income": {
+      "post": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "calculateSelfEmployedIncome",
+        "summary": "Calculate Fannie Mae self-employed income",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "params": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Call BEFORE getIncomeCalculations.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v2/book/{book_uuid}/bsic": {
+      "get": {
+        "tags": [
+          "Income Calculations"
+        ],
+        "operationId": "getBsic",
+        "summary": "Get BSIC results",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Bank Statement Income Calculator results."
+      }
+    },
+    "/v2/analytics/tags": {
+      "post": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "createTag",
+        "summary": "Create a custom transaction tag",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "listTags",
+        "summary": "List all tags",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "is_system_tag",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "description": "Filter system vs custom tags"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v2/analytics/tags/{tag_uuid}": {
+      "get": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "getTag",
+        "summary": "Retrieve a tag",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tag_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Tag UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "modifyTag",
+        "summary": "Modify a tag",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tag_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Tag UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "deleteTag",
+        "summary": "Delete a tag",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tag_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Tag UUID",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "System tags cannot be deleted."
+      }
+    },
+    "/v2/analytics/revenue-deduction-tags": {
+      "get": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "getRevenueDeductionTags",
+        "summary": "Get revenue deduction tags",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "updateRevenueDeductionTags",
+        "summary": "Update revenue deduction tags",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tag_names": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Replaces the full collection.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v2/analytics/book/{book_uuid}/transactions": {
+      "put": {
+        "tags": [
+          "Tag Management"
+        ],
+        "operationId": "overrideTransactionTag",
+        "summary": "Override transaction tag",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "book_uuid",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Book UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "txn_pk": {
+                  "type": "integer"
+                },
+                "tag_uuids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/copy-jobs": {
+      "post": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "createBookCopyJobs",
+        "summary": "Create book copy jobs",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Max 50 jobs per call.",
+        "consumes": [
+          "application/json"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "listBookCopyJobs",
+        "summary": "List book copy jobs",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "'outbound' or 'inbound'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/copy-jobs/{job_id}/accept": {
+      "post": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "acceptBookCopyJob",
+        "summary": "Accept a book copy job",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Copy job ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/book/copy-jobs/{job_id}/reject": {
+      "post": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "rejectBookCopyJob",
+        "summary": "Reject a book copy job",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Copy job ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/book/copy-jobs/run-kickouts": {
+      "post": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "runBookCopyKickouts",
+        "summary": "Run automated kick-outs",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Runs on all AWAITING_RECIPIENT jobs."
+      }
+    },
+    "/v1/settings/book-copy": {
+      "get": {
+        "tags": [
+          "Encore / Book Copy"
+        ],
+        "operationId": "getBookCopySettings",
+        "summary": "Get book copy settings",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/account/settings/webhook": {
+      "post": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "addOrgWebhook",
+        "summary": "Add org-level webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "events": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/account/settings/webhooks": {
+      "get": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "listOrgWebhooks",
+        "summary": "List org-level webhooks",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/account/settings/webhooks/{webhook_id}": {
+      "get": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "getOrgWebhook",
+        "summary": "Retrieve org-level webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "updateOrgWebhook",
+        "summary": "Update org-level webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Webhook ID"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "events": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "deleteOrgWebhook",
+        "summary": "Delete org-level webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/account/settings/webhooks/events": {
+      "get": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "listOrgWebhookEvents",
+        "summary": "List webhook event types",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/account/settings/webhooks/{webhook_id}/test": {
+      "post": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "testOrgWebhook",
+        "summary": "Test org-level webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Webhook ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/account/settings/webhooks/secret": {
+      "post": {
+        "tags": [
+          "Webhooks (Org)"
+        ],
+        "operationId": "configureOrgWebhookSecret",
+        "summary": "Configure org webhook secret",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "secret": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Secret must be 16-128 characters.",
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/webhook/configure": {
+      "post": {
+        "tags": [
+          "Webhooks (Account)"
+        ],
+        "operationId": "configureAccountWebhook",
+        "summary": "Configure account webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "events": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    },
+    "/v1/webhook/configuration": {
+      "get": {
+        "tags": [
+          "Webhooks (Account)"
+        ],
+        "operationId": "getAccountWebhookConfig",
+        "summary": "Get account webhook config",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/webhook/test": {
+      "post": {
+        "tags": [
+          "Webhooks (Account)"
+        ],
+        "operationId": "testAccountWebhook",
+        "summary": "Test account webhook",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/webhook/secret": {
+      "post": {
+        "tags": [
+          "Webhooks (Account)"
+        ],
+        "operationId": "configureAccountWebhookSecret",
+        "summary": "Configure account webhook secret",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "secret": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "consumes": [
+          "application/json"
+        ]
+      }
+    }
+  }
+}

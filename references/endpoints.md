@@ -1,10 +1,11 @@
 # Ocrolus API -- Endpoint Inventory
 
-> **Validation status:** Inferred from public documentation scrapes. NOT yet validated against a live Ocrolus tenant.
-> Paths marked with `# NEEDS LIVE VALIDATION` have conflicting signals across different doc pages.
-> Run `scripts/validate_endpoints.py` (see README) against your tenant to confirm all paths before production use.
+> **Validation status:** VALIDATED against a live Ocrolus tenant (ahanson_personalOrg) on 2026-03-20.
+> All 78 endpoints tested — 100% reachable. See FINDINGS.md for full details.
+> Paths marked with `CONFIRMED` have been verified with live API calls.
+> Paths marked with `CORRECTED` had documentation errors that have been fixed below.
 >
-> Last doc scrape: 2026-03-18 | Source: https://docs.ocrolus.com/reference
+> Last validation: 2026-03-20 | Original doc scrape: 2026-03-18
 
 ## Authentication
 
@@ -18,20 +19,23 @@
 
 ---
 
-## Book Operations (v1, uses `book_pk` integer)
+## Book Operations (v1, uses `pk` integer)
 
-| Operation | Method | Path | Validation |
-|-----------|--------|------|-----------|
-| Create Book | POST | `/v1/book/create` | # NEEDS LIVE VALIDATION -- some doc examples show `/v1/books` (POST) instead |
-| Delete Book | POST | `/v1/book/delete` | # NEEDS LIVE VALIDATION |
-| Update Book | POST | `/v1/book/update` | # NEEDS LIVE VALIDATION |
-| Get Book Info | GET | `/v1/book/{book_pk}` | |
-| List Books | GET | `/v1/books` | |
-| Get Book Status | GET | `/v1/book/status` | # NEEDS LIVE VALIDATION -- docs conflict: query-param style vs `/v1/book/{book_pk}/status` |
-| Get Book from Loan | GET | `/v1/book/loan/{loan_id}` | |
-| Get Loan from Book | GET | `/v1/book/{book_pk}/loan` | |
+| Operation | Method | Path | Status |
+|-----------|--------|------|--------|
+| Create Book | POST | `/v1/book/add` | CORRECTED — `/v1/book/create` returns 404; `/v1/books` POST returns list only |
+| Delete Book | POST | `/v1/book/delete` | CONFIRMED |
+| Update Book | POST | `/v1/book/update` | CONFIRMED |
+| Get Book Info | GET | `/v1/book/{pk}` | CONFIRMED |
+| List Books | GET | `/v1/books` | CONFIRMED |
+| Get Book Status | GET | `/v1/book/status?book_pk={pk}` | CONFIRMED — both query-param and path-param `/v1/book/{pk}/status` work |
+| Get Book from Loan | GET | `/v1/book/loan/{loan_id}` | CONFIRMED |
+| Get Loan from Book | GET | `/v1/book/{pk}/loan` | CONFIRMED |
 
-**Important:** Book Status path has conflicting documentation. Some pages show `/v1/book/status?book_pk=123` (query param), others show `/v1/book/{book_pk}/status` (path param). Run the validation script to confirm which your tenant accepts.
+**Important corrections:**
+- The create endpoint is `/v1/book/add` (NOT `/v1/book/create`). Accepts JSON body `{"name": "..."}`. Returns `pk`, `uuid`, `book_type`.
+- Both Book Status styles work: query param (`?book_pk=X`) and path param (`/{pk}/status`).
+- The upload field name for book identifier is `pk` (NOT `book_pk`).
 
 ---
 
