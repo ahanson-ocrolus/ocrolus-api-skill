@@ -13,7 +13,7 @@ Ocrolus is a document automation platform: **Classify** (document identification
 - **Base URL:** `https://api.ocrolus.com`
 - **Auth URL:** `https://auth.ocrolus.com/oauth/token` (form-encoded, no audience param)
 - **Auth type:** OAuth 2.0 Client Credentials -> Bearer JWT (24h expiry)
-- **Widget Auth URL:** `https://jwe-issuer.ocrolus.net/token` (separate credentials)
+- **Widget Auth URL:** `https://widget.ocrolus.com/v1/widget/{uuid}/token` (separate credentials)
 
 ## Where to Find Things
 
@@ -25,8 +25,8 @@ Ocrolus is a document automation platform: **Classify** (document identification
 | Fraud detection (scores, reason codes) | `references/detect.md` |
 | Webhook events and payloads | `references/webhooks.md` |
 | Coverage and validation status | `references/coverage-matrix.md` |
-| Health check, webhook tools | `tools/` (optional) |
-| API corrections and discoveries | `FINDINGS.md` |
+| Health check, webhook, widget tools | `tools/` (optional — see `tools/README.md`) |
+| API corrections and discoveries | `tools/FINDINGS.md` |
 
 ## Key Identifiers
 
