@@ -1,6 +1,9 @@
 # Separate repo (private)
 ocrolus_automations/
 
+# Internal testing findings
+tools/FINDINGS.md
+
 # Reports (generated)
 reports/
 

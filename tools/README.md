@@ -41,7 +41,6 @@ python widget_app.py
 
 | Path | Description |
 |------|-------------|
-| `FINDINGS.md` | Live testing report — API corrections, webhook event discovery, endpoint aliases |
 | `docs/` | OpenAPI specs (generated + official `ocrolus-api-official-openapi3.yaml`) |
 | `tests/` | pytest integration tests (`test_fixtures.py`) |
 | `maintenance/` | Internal scripts for spec generation and endpoint probing |

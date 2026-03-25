@@ -26,7 +26,6 @@ Ocrolus is a document automation platform: **Classify** (document identification
 | Webhook events and payloads | `references/webhooks.md` |
 | Coverage and validation status | `references/coverage-matrix.md` |
 | Health check, webhook, widget tools | `tools/` (optional — see `tools/README.md`) |
-| API corrections and discoveries | `tools/FINDINGS.md` |
 
 ## Key Identifiers
 

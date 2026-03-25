@@ -73,8 +73,6 @@ The `tools/` directory has optional utilities — see [`tools/README.md`](tools/
 - **Webhook setup** — listener + ngrok tunnel + auto-registration
 - **Widget quickstart** — Python/Flask implementation of the Ocrolus embeddable widget
 - **OpenAPI specs** — generated and official
-- **Live testing findings** — API corrections and endpoint discoveries
-
 ## Ocrolus Documentation
 
 - [API Guide](https://docs.ocrolus.com/docs/guide)
