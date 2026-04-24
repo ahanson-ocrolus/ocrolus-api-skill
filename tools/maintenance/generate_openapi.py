@@ -513,6 +513,43 @@ DOC_LINKS = {
 
 DOCS_BASE_URL = "https://docs.ocrolus.com/reference"
 
+# Tag order mirrors the docs.ocrolus.com/reference sidebar
+TAG_ORDER = [
+    "Authentication",
+    "Book Commands",
+    "Book Queries",
+    "File Uploads",
+    "File Commands",
+    "File Queries",
+    "Classify",
+    "Capture",
+    "Detect",
+    "Analyze",
+    "Encore",
+    "Income",
+    "Tag Management",
+    "Webhooks (Account Level)",
+    "Webhooks (Org Level)",
+]
+
+TAG_DESCRIPTIONS = {
+    "Authentication": "OAuth 2.0 token management",
+    "Book Commands": "Create, update, and delete Books",
+    "Book Queries": "Read Book information, status, and related loan data",
+    "File Uploads": "Upload documents, paystubs, images, and Plaid data to Books",
+    "File Commands": "Cancel, delete, download, and upgrade documents",
+    "File Queries": "Retrieve file and mixed-document status",
+    "Classify": "Identify document types with confidence scores",
+    "Capture": "Extract structured data from documents (forms, paystubs, transactions)",
+    "Detect": "Fraud detection signals, authenticity scores, and reason codes",
+    "Analyze": "Cash flow analytics, enriched transactions, and risk scoring",
+    "Income": "Income calculations, BSIC, and self-employed income",
+    "Tag Management": "Transaction tag management (Beta)",
+    "Encore": "Book copy jobs for organization-to-organization sharing",
+    "Webhooks (Account Level)": "Account-level webhook management (legacy)",
+    "Webhooks (Org Level)": "Organization-level webhook management (recommended)",
+}
+
 
 # ---------------------------------------------------------------------------
 # Type mapping helpers
@@ -687,46 +724,10 @@ def generate_openapi3() -> dict:
         "paths": {},
     }
 
-    tag_descriptions = {
-        "Authentication": "OAuth 2.0 token management",
-        "Book Commands": "Create, update, and delete Books",
-        "Book Queries": "Read Book information, status, and related loan data",
-        "File Uploads": "Upload documents, paystubs, images, and Plaid data to Books",
-        "File Commands": "Cancel, delete, download, and upgrade documents",
-        "File Queries": "Retrieve file and mixed-document status",
-        "Classify": "Identify document types with confidence scores",
-        "Capture": "Extract structured data from documents (forms, paystubs, transactions)",
-        "Detect": "Fraud detection signals, authenticity scores, and reason codes",
-        "Analyze": "Cash flow analytics, enriched transactions, and risk scoring",
-        "Income": "Income calculations, BSIC, and self-employed income",
-        "Tag Management": "Transaction tag management (Beta)",
-        "Encore": "Book copy jobs for organization-to-organization sharing",
-        "Webhooks (Account Level)": "Account-level webhook management (legacy)",
-        "Webhooks (Org Level)": "Organization-level webhook management (recommended)",
-    }
-
-    # Add tags in the official docs-site order
-    tag_order = [
-        "Authentication",
-        "Book Commands",
-        "Book Queries",
-        "File Uploads",
-        "File Commands",
-        "File Queries",
-        "Classify",
-        "Capture",
-        "Detect",
-        "Analyze",
-        "Encore",
-        "Income",
-        "Tag Management",
-        "Webhooks (Account Level)",
-        "Webhooks (Org Level)",
-    ]
     tags_in_use = {ep[0] for ep in ENDPOINTS}
-    for tag in tag_order:
+    for tag in TAG_ORDER:
         if tag in tags_in_use:
-            spec["tags"].append({"name": tag, "description": tag_descriptions.get(tag, "")})
+            spec["tags"].append({"name": tag, "description": TAG_DESCRIPTIONS.get(tag, "")})
 
     # Build paths
     for tag, op_id, summary, method, path, params, req_body, resp_type, deprecated, notes in ENDPOINTS:
@@ -813,10 +814,11 @@ def generate_openapi3() -> dict:
 
         # Request body
         if req_body:
-            is_multipart = req_body.pop("_multipart", False) if isinstance(req_body, dict) else False
+            body_copy = dict(req_body) if isinstance(req_body, dict) else {}
+            is_multipart = body_copy.pop("_multipart", False)
             if is_multipart:
                 props = {}
-                for k, v in req_body.items():
+                for k, v in body_copy.items():
                     props[k] = _oas3_type(v, k)
                 operation["requestBody"] = {
                     "required": True,
@@ -828,7 +830,7 @@ def generate_openapi3() -> dict:
                 }
             else:
                 props = {}
-                for k, v in req_body.items():
+                for k, v in body_copy.items():
                     props[k] = _oas3_type(v, k)
                 operation["requestBody"] = {
                     "required": True,
@@ -903,26 +905,8 @@ def generate_swagger2() -> dict:
         "paths": {},
     }
 
-    # Add tags in the official docs-site order
-    tag_order_sw2 = [
-        "Authentication",
-        "Book Commands",
-        "Book Queries",
-        "File Uploads",
-        "File Commands",
-        "File Queries",
-        "Classify",
-        "Capture",
-        "Detect",
-        "Analyze",
-        "Encore",
-        "Income",
-        "Tag Management",
-        "Webhooks (Account Level)",
-        "Webhooks (Org Level)",
-    ]
     tags_in_use_sw2 = {ep[0] for ep in ENDPOINTS}
-    for tag in tag_order_sw2:
+    for tag in TAG_ORDER:
         if tag in tags_in_use_sw2:
             spec["tags"].append({"name": tag})
 
@@ -1036,6 +1020,259 @@ def generate_swagger2() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Postman Collection v2.1 generator
+# ---------------------------------------------------------------------------
+#
+# Produces a native Postman Collection JSON with tags as folders, so when
+# imported the collection mirrors the docs.ocrolus.com/reference sidebar
+# structure regardless of Postman's folder-strategy setting.
+
+POSTMAN_EXAMPLES = {
+    "name": "My Book",
+    "book_type": "DEFAULT",
+    "pk": "71250194",
+    "book_id": "71250194",
+    "book_uuid": "09c52985-2f05-4022-a738-9277cc335c7e",
+    "book_pk": "71250194",
+    "doc_pk": "12345678",
+    "doc_id": "12345678",
+    "doc_uuid": "aaaa1111-bbbb-2222-cccc-333344445555",
+    "mixed_doc_pk": "12345678",
+    "mixed_doc_uuid": "aaaa1111-bbbb-2222-cccc-333344445555",
+    "uploaded_doc_pk": "12345678",
+    "uploaded_doc_uuid": "aaaa1111-bbbb-2222-cccc-333344445555",
+    "form_uuid": "bbbb2222-cccc-3333-dddd-444455556666",
+    "paystub_uuid": "cccc3333-dddd-4444-eeee-555566667777",
+    "visualization_uuid": "dddd4444-eeee-5555-ffff-666677778888",
+    "tag_uuid": "eeee5555-ffff-6666-1111-777788889999",
+    "webhook_id": "webhook_abc123",
+    "loan_id": "LOAN-001",
+    "job_id": "job_12345",
+    "form_type": "bank_statement",
+    "doc_name": "January 2026 Statement",
+    "upgrade_type": "INSTANT",
+    "image_group": "group-1",
+    "audit_copy_token": "<plaid_audit_copy_token>",
+    "accept_charges": "true",
+    "grant_type": "client_credentials",
+    "client_id": "{{OCROLUS_CLIENT_ID}}",
+    "client_secret": "{{OCROLUS_CLIENT_SECRET}}",
+    "url": "https://example.com/webhook",
+    "secret": "<webhook_secret_16_to_128_chars>",
+    "page": "1",
+    "per_page": "50",
+    "min_days_to_include": "0",
+    "guideline": "FANNIE_MAE",
+    "direction": "OUTBOUND",
+    "is_system_tag": "false",
+    "only_tagged": "true",
+    "distinct_fields": "true",
+    "target_type": "INSTANT",
+}
+
+
+def _postman_example(field_name: str, default: str = "") -> str:
+    """Return a realistic example value for a Postman variable or field."""
+    return POSTMAN_EXAMPLES.get(field_name, default)
+
+
+def _postman_url(path: str, query_params: list, path_params: list) -> dict:
+    """Build a Postman URL object for a given endpoint path and params."""
+    if path.startswith("https://"):
+        # Full URL (e.g., auth endpoint)
+        from urllib.parse import urlparse
+        parsed = urlparse(path)
+        host = parsed.netloc.split(".")
+        raw = path
+        segments = [s for s in parsed.path.split("/") if s]
+        url_obj = {
+            "raw": raw,
+            "protocol": parsed.scheme,
+            "host": host,
+            "path": segments,
+        }
+    else:
+        # Relative path — use {{BASE_URL}} variable
+        segments = []
+        for seg in [s for s in path.split("/") if s]:
+            if seg.startswith("{") and seg.endswith("}"):
+                var_name = seg[1:-1]
+                segments.append(":" + var_name)
+            else:
+                segments.append(seg)
+        raw = "{{BASE_URL}}/" + "/".join(segments)
+        url_obj = {
+            "raw": raw,
+            "host": ["{{BASE_URL}}"],
+            "path": segments,
+        }
+
+    # Add path variables
+    if path_params:
+        url_obj["variable"] = []
+        for p in path_params:
+            url_obj["variable"].append({
+                "key": p["name"],
+                "value": _postman_example(p["name"], ""),
+                "description": p.get("description", ""),
+            })
+
+    # Add query parameters
+    if query_params:
+        url_obj["query"] = []
+        query_raw_parts = []
+        for p in query_params:
+            example = _postman_example(p["name"], "")
+            url_obj["query"].append({
+                "key": p["name"],
+                "value": example,
+                "description": p.get("description", ""),
+                "disabled": not p.get("required", False),
+            })
+            query_raw_parts.append(f"{p['name']}={example}")
+        if query_raw_parts:
+            url_obj["raw"] = raw + "?" + "&".join(query_raw_parts)
+
+    return url_obj
+
+
+def _postman_body(req_body, is_auth_form: bool = False) -> dict:
+    """Build a Postman request body object."""
+    if not req_body:
+        return None
+
+    body_dict = dict(req_body)
+    is_multipart = body_dict.pop("_multipart", False)
+
+    if is_auth_form:
+        # OAuth token uses x-www-form-urlencoded
+        return {
+            "mode": "urlencoded",
+            "urlencoded": [
+                {"key": k, "value": _postman_example(k, ""), "type": "text"}
+                for k in body_dict.keys()
+            ],
+        }
+
+    if is_multipart:
+        fields = []
+        for k, v in body_dict.items():
+            if v == "file":
+                fields.append({"key": k, "type": "file", "src": ""})
+            else:
+                fields.append({
+                    "key": k,
+                    "type": "text",
+                    "value": _postman_example(k, ""),
+                })
+        return {"mode": "formdata", "formdata": fields}
+
+    # JSON body
+    example_body = {k: _postman_example(k, "") for k in body_dict.keys()}
+    return {
+        "mode": "raw",
+        "raw": json.dumps(example_body, indent=2),
+        "options": {"raw": {"language": "json"}},
+    }
+
+
+def generate_postman_collection() -> dict:
+    """Generate a Postman Collection v2.1 with tags-as-folders structure."""
+    collection = {
+        "info": {
+            "name": "Ocrolus API",
+            "description": (
+                "Ocrolus document automation platform API. Folders match the "
+                "docs.ocrolus.com/reference sidebar structure.\n\n"
+                "## Setup\n"
+                "1. Set the `BASE_URL` collection variable to `https://api.ocrolus.com`\n"
+                "2. Set `OCROLUS_CLIENT_ID` and `OCROLUS_CLIENT_SECRET` as secrets\n"
+                "3. Call Authentication → oauth/token to get a bearer token\n"
+                "4. Save the returned `access_token` to the `ACCESS_TOKEN` variable\n\n"
+                "All other requests use `Authorization: Bearer {{ACCESS_TOKEN}}`."
+            ),
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        },
+        "auth": {
+            "type": "bearer",
+            "bearer": [{"key": "token", "value": "{{ACCESS_TOKEN}}", "type": "string"}],
+        },
+        "variable": [
+            {"key": "BASE_URL", "value": "https://api.ocrolus.com", "type": "string"},
+            {"key": "ACCESS_TOKEN", "value": "", "type": "string", "description": "Bearer token from /oauth/token"},
+            {"key": "OCROLUS_CLIENT_ID", "value": "", "type": "string"},
+            {"key": "OCROLUS_CLIENT_SECRET", "value": "", "type": "secret"},
+        ],
+        "item": [],
+    }
+
+    # Group endpoints by tag
+    endpoints_by_tag = {}
+    for ep in ENDPOINTS:
+        tag = ep[0]
+        endpoints_by_tag.setdefault(tag, []).append(ep)
+
+    # Emit folders in docs-site order
+    for tag in TAG_ORDER:
+        if tag not in endpoints_by_tag:
+            continue
+        folder = {
+            "name": tag,
+            "description": TAG_DESCRIPTIONS.get(tag, ""),
+            "item": [],
+        }
+
+        for (_, op_id, summary, method, path, params, req_body, resp_type, deprecated, notes) in endpoints_by_tag[tag]:
+            path_params = [p for p in (params or []) if p.get("in") == "path"]
+            query_params = [p for p in (params or []) if p.get("in") == "query"]
+
+            is_auth = path.startswith("https://") and "auth.ocrolus.com" in path
+            url_obj = _postman_url(path, query_params, path_params)
+
+            headers = []
+            if is_auth:
+                headers.append({"key": "Content-Type", "value": "application/x-www-form-urlencoded"})
+            elif req_body and isinstance(req_body, dict) and not req_body.get("_multipart"):
+                headers.append({"key": "Content-Type", "value": "application/json"})
+            headers.append({"key": "Accept", "value": "application/json"})
+
+            body = _postman_body(req_body, is_auth_form=is_auth)
+
+            # Build description with docs link
+            desc_parts = []
+            if notes:
+                desc_parts.append(notes)
+            doc_slug = DOC_LINKS.get(op_id)
+            if doc_slug:
+                desc_parts.append(f"**Docs:** {DOCS_BASE_URL}/{doc_slug}")
+            if deprecated:
+                desc_parts.append("**DEPRECATED.**")
+            description = "\n\n".join(desc_parts)
+
+            request_obj = {
+                "name": summary,
+                "request": {
+                    "method": method,
+                    "header": headers,
+                    "url": url_obj,
+                    "description": description,
+                },
+                "response": [],
+            }
+            if body is not None:
+                request_obj["request"]["body"] = body
+            # Auth endpoint has no auth
+            if is_auth:
+                request_obj["request"]["auth"] = {"type": "noauth"}
+
+            folder["item"].append(request_obj)
+
+        collection["item"].append(folder)
+
+    return collection
+
+
+# ---------------------------------------------------------------------------
 # YAML writer (no PyYAML dependency)
 # ---------------------------------------------------------------------------
 
@@ -1118,15 +1355,19 @@ def _to_yaml(obj, indent=0) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Generate Ocrolus API OpenAPI/Swagger specs")
     parser.add_argument("--output-dir", default="./docs", help="Output directory")
-    parser.add_argument("--format", choices=["openapi3", "swagger2", "both"], default="both",
-                        help="Which format(s) to generate")
+    parser.add_argument("--format", choices=["openapi3", "swagger2", "postman", "all", "both"], default="all",
+                        help="Which format(s) to generate (default: all). 'both' is legacy for openapi3+swagger2.")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
 
     generated = []
 
-    if args.format in ("openapi3", "both"):
+    emit_openapi3 = args.format in ("openapi3", "both", "all")
+    emit_swagger2 = args.format in ("swagger2", "both", "all")
+    emit_postman = args.format in ("postman", "all")
+
+    if emit_openapi3:
         spec = generate_openapi3()
         yaml_path = os.path.join(args.output_dir, "ocrolus-api-annotated-openapi3.yaml")
         with open(yaml_path, "w") as f:
@@ -1142,12 +1383,19 @@ def main():
             json.dump(spec, f, indent=2)
         generated.append(("OpenAPI 3.0.3 JSON", json_path))
 
-    if args.format in ("swagger2", "both"):
+    if emit_swagger2:
         spec = generate_swagger2()
         json_path = os.path.join(args.output_dir, "ocrolus-api-annotated-swagger2.json")
         with open(json_path, "w") as f:
             json.dump(spec, f, indent=2)
         generated.append(("Swagger 2.0 JSON", json_path))
+
+    if emit_postman:
+        collection = generate_postman_collection()
+        pm_path = os.path.join(args.output_dir, "ocrolus-api.postman_collection.json")
+        with open(pm_path, "w") as f:
+            json.dump(collection, f, indent=2)
+        generated.append(("Postman Collection v2.1", pm_path))
 
     # Count endpoints
     tag_counts = {}
@@ -1164,8 +1412,9 @@ def main():
     for label, path in generated:
         print(f"  {label}: {path}")
     print()
-    print("Tip: Import the OpenAPI 3 JSON into Swagger UI, Postman,")
-    print("or any API documentation tool for interactive exploration.")
+    print("Tips:")
+    print("  - For Postman: import the .postman_collection.json for tag-based folders")
+    print("  - For Swagger UI or other API tools: use the OpenAPI 3 YAML/JSON")
 
 
 if __name__ == "__main__":

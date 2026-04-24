@@ -1,0 +1,2886 @@
+{
+  "info": {
+    "name": "Ocrolus API",
+    "description": "Ocrolus document automation platform API. Folders match the docs.ocrolus.com/reference sidebar structure.\n\n## Setup\n1. Set the `BASE_URL` collection variable to `https://api.ocrolus.com`\n2. Set `OCROLUS_CLIENT_ID` and `OCROLUS_CLIENT_SECRET` as secrets\n3. Call Authentication \u2192 oauth/token to get a bearer token\n4. Save the returned `access_token` to the `ACCESS_TOKEN` variable\n\nAll other requests use `Authorization: Bearer {{ACCESS_TOKEN}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{ACCESS_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "https://api.ocrolus.com",
+      "type": "string"
+    },
+    {
+      "key": "ACCESS_TOKEN",
+      "value": "",
+      "type": "string",
+      "description": "Bearer token from /oauth/token"
+    },
+    {
+      "key": "OCROLUS_CLIENT_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "OCROLUS_CLIENT_SECRET",
+      "value": "",
+      "type": "secret"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "OAuth 2.0 token management",
+      "item": [
+        {
+          "name": "oauth/token \u2014 Obtain OAuth 2.0 Bearer Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://auth.ocrolus.com/oauth/token",
+              "protocol": "https",
+              "host": [
+                "auth",
+                "ocrolus",
+                "com"
+              ],
+              "path": [
+                "oauth",
+                "token"
+              ]
+            },
+            "description": "Body: form-encoded (NOT JSON). OAuth 2.0 client_credentials grant. Returns JWT with 24h expiry. No 'audience' param.\n\n**Docs:** https://docs.ocrolus.com/reference/grant-authentication-token",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{OCROLUS_CLIENT_ID}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{OCROLUS_CLIENT_SECRET}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Book Commands",
+      "description": "Create, update, and delete Books",
+      "item": [
+        {
+          "name": "book/add \u2014 Create a new Book",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/add",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "add"
+              ]
+            },
+            "description": "CORRECTED from /v1/book/create. Returns pk (int) and uuid (str). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/create-a-book",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Book\",\n  \"book_type\": \"DEFAULT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/delete \u2014 Delete a Book",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/delete",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "delete"
+              ]
+            },
+            "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string).\n\n**Docs:** https://docs.ocrolus.com/reference/delete-a-book",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": \"71250194\",\n  \"book_uuid\": \"09c52985-2f05-4022-a738-9277cc335c7e\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/update \u2014 Update Book properties",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/update",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "update"
+              ]
+            },
+            "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID string) + fields to update.\n\n**Docs:** https://docs.ocrolus.com/reference/update-book",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pk\": \"71250194\",\n  \"book_uuid\": \"09c52985-2f05-4022-a738-9277cc335c7e\",\n  \"name\": \"My Book\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Book Queries",
+      "description": "Read Book information, status, and related loan data",
+      "item": [
+        {
+          "name": "book/{pk} \u2014 Get Book information",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:pk",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":pk"
+              ],
+              "variable": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Book primary key (integer)"
+                }
+              ]
+            },
+            "description": "Path param: pk (integer).\n\n**Docs:** https://docs.ocrolus.com/reference/book-info"
+          },
+          "response": []
+        },
+        {
+          "name": "books \u2014 List all Books",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/books?page=1&per_page=50",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "50",
+                  "description": "Results per page",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Query params: page, per_page (both optional).\n\n**Docs:** https://docs.ocrolus.com/reference/book-list"
+          },
+          "response": []
+        },
+        {
+          "name": "book/status \u2014 Get Book processing status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/status?book_pk=71250194",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "book_pk",
+                  "value": "71250194",
+                  "description": "Book primary key",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Query param: book_pk (integer). Alt path: /v1/book/{pk}/status also works.\n\n**Docs:** https://docs.ocrolus.com/reference/book-status"
+          },
+          "response": []
+        },
+        {
+          "name": "book/loan/{loan_id} \u2014 Get Book from loan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/loan/:loan_id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "loan",
+                ":loan_id"
+              ],
+              "variable": [
+                {
+                  "key": "loan_id",
+                  "value": "LOAN-001",
+                  "description": "Loan identifier"
+                }
+              ]
+            },
+            "description": "Path param: loan_id (string).\n\n**Docs:** https://docs.ocrolus.com/reference/book-from-loan"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{pk}/loan \u2014 Get loan from Book",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:pk/loan",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":pk",
+                "loan"
+              ],
+              "variable": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Book primary key (integer)"
+                }
+              ]
+            },
+            "description": "Path param: pk (integer).\n\n**Docs:** https://docs.ocrolus.com/reference/loan-from-book"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Uploads",
+      "description": "Upload documents, paystubs, images, and Plaid data to Books",
+      "item": [
+        {
+          "name": "book/upload \u2014 Upload a PDF document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/upload",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "upload"
+              ]
+            },
+            "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Max 200MB. form_type and doc_name optional.\n\n**Docs:** https://docs.ocrolus.com/reference/upload-document",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pk",
+                  "type": "text",
+                  "value": "71250194"
+                },
+                {
+                  "key": "book_uuid",
+                  "type": "text",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e"
+                },
+                {
+                  "key": "upload",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "form_type",
+                  "type": "text",
+                  "value": "bank_statement"
+                },
+                {
+                  "key": "doc_name",
+                  "type": "text",
+                  "value": "January 2026 Statement"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/upload/mixed \u2014 Upload a mixed document PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/upload/mixed",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "upload",
+                "mixed"
+              ]
+            },
+            "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Multiple doc types in single PDF.\n\n**Docs:** https://docs.ocrolus.com/reference/upload-mixed-document",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pk",
+                  "type": "text",
+                  "value": "71250194"
+                },
+                {
+                  "key": "book_uuid",
+                  "type": "text",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e"
+                },
+                {
+                  "key": "upload",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/upload/paystub \u2014 Upload a pay stub PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/upload/paystub",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "upload",
+                "paystub"
+              ]
+            },
+            "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/upload-paystub",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pk",
+                  "type": "text",
+                  "value": "71250194"
+                },
+                {
+                  "key": "book_uuid",
+                  "type": "text",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e"
+                },
+                {
+                  "key": "upload",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/upload/image \u2014 Upload an image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/upload/image",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "upload",
+                "image"
+              ]
+            },
+            "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/upload-image",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pk",
+                  "type": "text",
+                  "value": "71250194"
+                },
+                {
+                  "key": "book_uuid",
+                  "type": "text",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e"
+                },
+                {
+                  "key": "upload",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "image_group",
+                  "type": "text",
+                  "value": "group-1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/finalize-image-group \u2014 Finalize an image group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/finalize-image-group",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "finalize-image-group"
+              ]
+            },
+            "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/mark-image-group-complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pk\": \"71250194\",\n  \"book_uuid\": \"09c52985-2f05-4022-a738-9277cc335c7e\",\n  \"image_group\": \"group-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/upload/plaid \u2014 Upload Plaid aggregator JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/upload/plaid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "upload",
+                "plaid"
+              ]
+            },
+            "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/upload-json",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pk\": \"71250194\",\n  \"book_uuid\": \"09c52985-2f05-4022-a738-9277cc335c7e\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/import/plaid/asset \u2014 Import Plaid Asset Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/import/plaid/asset",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "import",
+                "plaid",
+                "asset"
+              ]
+            },
+            "description": "Body: JSON. Production only. Requires auditor_id: 'ocrolus'.\n\n**Docs:** https://docs.ocrolus.com/reference/import-plaid-asset-report",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audit_copy_token\": \"<plaid_audit_copy_token>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Commands",
+      "description": "Cancel, delete, download, and upgrade documents",
+      "item": [
+        {
+          "name": "document/cancel \u2014 Cancel document verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/cancel",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID). Body (JSON, optional): doc_pk or doc_uuid, accept_charges. Official spec also supports query-param style: /v1/document/cancel?doc_uuid=X\n\n**Docs:** https://docs.ocrolus.com/reference/cancel-file-verification",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doc_pk\": \"12345678\",\n  \"doc_uuid\": \"aaaa1111-bbbb-2222-cccc-333344445555\",\n  \"accept_charges\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "document/remove \u2014 Delete a document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/delete",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "delete"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID). Body (JSON): doc_id (integer) or doc_uuid (UUID). Official spec also supports query-param style: /v1/document/remove?doc_uuid=X\n\n**Docs:** https://docs.ocrolus.com/reference/delete-a-file",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doc_id\": \"12345678\",\n  \"doc_uuid\": \"aaaa1111-bbbb-2222-cccc-333344445555\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "document/{doc_uuid}/download \u2014 Download a document file",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/download",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "download"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/document-download"
+          },
+          "response": []
+        },
+        {
+          "name": "document/upgrade \u2014 Upgrade document processing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/upgrade",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "upgrade"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID). Body (JSON): doc_pk or doc_uuid + upgrade_type. Official spec also supports: /v1/document/upgrade?doc_uuid=X\n\n**Docs:** https://docs.ocrolus.com/reference/upgrade-doc",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doc_pk\": \"12345678\",\n  \"doc_uuid\": \"aaaa1111-bbbb-2222-cccc-333344445555\",\n  \"upgrade_type\": \"INSTANT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "document/mixed/upgrade \u2014 Upgrade mixed document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/mixed/upgrade",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                "mixed",
+                "upgrade"
+              ]
+            },
+            "description": "Body (JSON): mixed_doc_pk (integer) or mixed_doc_uuid (UUID) + upgrade_type.\n\n**Docs:** https://docs.ocrolus.com/reference/upgrade-mixed-doc",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mixed_doc_pk\": \"12345678\",\n  \"mixed_doc_uuid\": \"aaaa1111-bbbb-2222-cccc-333344445555\",\n  \"upgrade_type\": \"INSTANT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Queries",
+      "description": "Retrieve file and mixed-document status",
+      "item": [
+        {
+          "name": "document/mixed/status \u2014 Get mixed document status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/mixed/status?pk=71250194&doc_uuid=aaaa1111-bbbb-2222-cccc-333344445555&mixed_doc_uuid=aaaa1111-bbbb-2222-cccc-333344445555",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                "mixed",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Mixed document primary key",
+                  "disabled": true
+                },
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID",
+                  "disabled": true
+                },
+                {
+                  "key": "mixed_doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Mixed document UUID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Query params: exactly one of pk (integer), doc_uuid (UUID), or mixed_doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/mixed-document-status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Classify",
+      "description": "Identify document types with confidence scores",
+      "item": [
+        {
+          "name": "book/{book_uuid}/classification-summary \u2014 Book classification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/classification-summary",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "classification-summary"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Identifies 300+ document types with confidence scores (0-1).\n\n**Docs:** https://docs.ocrolus.com/reference/book-classification-summary"
+          },
+          "response": []
+        },
+        {
+          "name": "mixed-document/{mixed_doc_uuid}/classification-summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/mixed-document/:mixed_doc_uuid/classification-summary",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "mixed-document",
+                ":mixed_doc_uuid",
+                "classification-summary"
+              ],
+              "variable": [
+                {
+                  "key": "mixed_doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Mixed document UUID"
+                }
+              ]
+            },
+            "description": "Path param: mixed_doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/mixed-doc-classification-summary"
+          },
+          "response": []
+        },
+        {
+          "name": "index/mixed-doc/{mixed_doc_uuid}/summary \u2014 Grouped classification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/index/mixed-doc/:mixed_doc_uuid/summary",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "index",
+                "mixed-doc",
+                ":mixed_doc_uuid",
+                "summary"
+              ],
+              "variable": [
+                {
+                  "key": "mixed_doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Mixed document UUID"
+                }
+              ]
+            },
+            "description": "Path param: mixed_doc_uuid (UUID). Organizes forms into logical groups with uniqueness values.\n\n**Docs:** https://docs.ocrolus.com/reference/grouped-mixed-doc-classification-summary"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Capture",
+      "description": "Extract structured data from documents (forms, paystubs, transactions)",
+      "item": [
+        {
+          "name": "book/{pk}/forms \u2014 Get book form data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:pk/forms",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":pk",
+                "forms"
+              ],
+              "variable": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Book primary key (integer)"
+                }
+              ]
+            },
+            "description": "Path param: pk (integer).\n\n**Docs:** https://docs.ocrolus.com/reference/book-form-data"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{pk}/paystubs \u2014 Get book pay stub data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:pk/paystubs",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":pk",
+                "paystubs"
+              ],
+              "variable": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Book primary key (integer)"
+                }
+              ]
+            },
+            "description": "Path param: pk (integer).\n\n**Docs:** https://docs.ocrolus.com/reference/book-paystub-data"
+          },
+          "response": []
+        },
+        {
+          "name": "document/{doc_uuid}/forms \u2014 Get document form data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/forms",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "forms"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/doc-form-data"
+          },
+          "response": []
+        },
+        {
+          "name": "document/{doc_uuid}/paystubs \u2014 Get document pay stub data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/document/:doc_uuid/paystubs",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "document",
+                ":doc_uuid",
+                "paystubs"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/doc-paystub-data"
+          },
+          "response": []
+        },
+        {
+          "name": "form/{form_uuid}/fields \u2014 Get form field data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/form/:form_uuid/fields",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "form",
+                ":form_uuid",
+                "fields"
+              ],
+              "variable": [
+                {
+                  "key": "form_uuid",
+                  "value": "bbbb2222-cccc-3333-dddd-444455556666",
+                  "description": "Form UUID"
+                }
+              ]
+            },
+            "description": "Path param: form_uuid (UUID). Returns confidence scores per field (0-1).\n\n**Docs:** https://docs.ocrolus.com/reference/form-field-data"
+          },
+          "response": []
+        },
+        {
+          "name": "paystub/{paystub_uuid} \u2014 Get pay stub data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/paystub/:paystub_uuid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "paystub",
+                ":paystub_uuid"
+              ],
+              "variable": [
+                {
+                  "key": "paystub_uuid",
+                  "value": "cccc3333-dddd-4444-eeee-555566667777",
+                  "description": "Pay stub UUID"
+                }
+              ]
+            },
+            "description": "Path param: paystub_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/paystub-data"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{pk}/transactions \u2014 Get book transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:pk/transactions?uploaded_doc_pk=12345678&uploaded_doc_uuid=aaaa1111-bbbb-2222-cccc-333344445555&only_tagged=true&distinct_fields=true",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":pk",
+                "transactions"
+              ],
+              "variable": [
+                {
+                  "key": "pk",
+                  "value": "71250194",
+                  "description": "Book primary key (integer)"
+                }
+              ],
+              "query": [
+                {
+                  "key": "uploaded_doc_pk",
+                  "value": "12345678",
+                  "description": "Filter by uploaded document primary key",
+                  "disabled": true
+                },
+                {
+                  "key": "uploaded_doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Filter by uploaded document UUID",
+                  "disabled": true
+                },
+                {
+                  "key": "only_tagged",
+                  "value": "true",
+                  "description": "Only return tagged transactions (requires distinct_fields=true)",
+                  "disabled": true
+                },
+                {
+                  "key": "distinct_fields",
+                  "value": "true",
+                  "description": "Return only distinct field values",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Path param: pk (integer). Query params (optional): uploaded_doc_pk, uploaded_doc_uuid, only_tagged, distinct_fields. Alt: /v1/transaction?book_pk=X also works.\n\n**Docs:** https://docs.ocrolus.com/reference/transactions"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Detect",
+      "description": "Fraud detection signals, authenticity scores, and reason codes",
+      "item": [
+        {
+          "name": "detect/book/{book_uuid}/signals \u2014 Book-level fraud signals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/detect/book/:book_uuid/signals",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "detect",
+                "book",
+                ":book_uuid",
+                "signals"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Returns authenticity scores (0-100), reason codes, and signal types.\n\n**Docs:** https://docs.ocrolus.com/reference/book-fraud-signals"
+          },
+          "response": []
+        },
+        {
+          "name": "detect/document/{doc_uuid}/signals \u2014 Document-level fraud signals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/detect/document/:doc_uuid/signals",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "detect",
+                "document",
+                ":doc_uuid",
+                "signals"
+              ],
+              "variable": [
+                {
+                  "key": "doc_uuid",
+                  "value": "aaaa1111-bbbb-2222-cccc-333344445555",
+                  "description": "Document UUID"
+                }
+              ]
+            },
+            "description": "Path param: doc_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/doc-fraud-signals"
+          },
+          "response": []
+        },
+        {
+          "name": "detect/visualization/{visualization_uuid} \u2014 Signal visualization",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/detect/visualization/:visualization_uuid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "detect",
+                "visualization",
+                ":visualization_uuid"
+              ],
+              "variable": [
+                {
+                  "key": "visualization_uuid",
+                  "value": "dddd4444-eeee-5555-ffff-666677778888",
+                  "description": "Visualization UUID"
+                }
+              ]
+            },
+            "description": "Path param: visualization_uuid (UUID). Returns binary image with fraud signal overlays.\n\n**Docs:** https://docs.ocrolus.com/reference/signal-visualization"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/suspicious-activity-flags \u2014 LEGACY",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/:book_uuid/suspicious-activity-flags",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                ":book_uuid",
+                "suspicious-activity-flags"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "DEPRECATED. Use /v2/detect/ endpoints instead. Path param: book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/suspicious-activity\n\n**DEPRECATED.**"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analyze",
+      "description": "Cash flow analytics, enriched transactions, and risk scoring",
+      "item": [
+        {
+          "name": "book/{book_uuid}/summary \u2014 Cash flow summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/summary",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "summary"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Returns daily balances, PII, and time series data.\n\n**Docs:** https://docs.ocrolus.com/reference/book-summary"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/cash_flow_features \u2014 Cash flow features",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/cash_flow_features?min_days_to_include=0",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "cash_flow_features"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ],
+              "query": [
+                {
+                  "key": "min_days_to_include",
+                  "value": "0",
+                  "description": "Min days for most recent month (default 0, use 32 for full months only)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Query param: min_days_to_include (integer, optional).\n\n**Docs:** https://docs.ocrolus.com/reference/cash-flow-features"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/enriched_txns \u2014 Enriched transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/enriched_txns",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "enriched_txns"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Returns transactions with categories and tags.\n\n**Docs:** https://docs.ocrolus.com/reference/enriched-transactions"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/cash_flow_risk_score \u2014 Risk score",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/cash_flow_risk_score",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "cash_flow_risk_score"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Returns probability of default.\n\n**Docs:** https://docs.ocrolus.com/reference/risk-score"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/benchmarking \u2014 Benchmarking (Beta)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/benchmarking",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "benchmarking"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). NAICS4-based benchmarking. Beta feature."
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/lender_analytics/xlsx \u2014 SMB analytics Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/lender_analytics/xlsx",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "lender_analytics",
+                "xlsx"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Returns .xlsx binary content.\n\n**Docs:** https://docs.ocrolus.com/reference/analytics-excel"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Encore",
+      "description": "Book copy jobs for organization-to-organization sharing",
+      "item": [
+        {
+          "name": "book/copy-jobs \u2014 Create book copy jobs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/copy-jobs",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "copy-jobs"
+              ]
+            },
+            "description": "Body: JSON. Max 50 jobs per call.\n\n**Docs:** https://docs.ocrolus.com/reference/create-book-copy-jobs",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobs\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/copy-jobs \u2014 List book copy jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/copy-jobs?direction=OUTBOUND",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "copy-jobs"
+              ],
+              "query": [
+                {
+                  "key": "direction",
+                  "value": "OUTBOUND",
+                  "description": "'outbound' or 'inbound'",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Query param: direction (string, optional \u2014 'outbound' or 'inbound').\n\n**Docs:** https://docs.ocrolus.com/reference/list-book-copy-jobs"
+          },
+          "response": []
+        },
+        {
+          "name": "book/copy-jobs/{job_id}/accept \u2014 Accept a copy job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/copy-jobs/:job_id/accept",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "copy-jobs",
+                ":job_id",
+                "accept"
+              ],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "job_12345",
+                  "description": "Copy job ID"
+                }
+              ]
+            },
+            "description": "Path param: job_id (string). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/copy-jobs-accept",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Book\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/copy-jobs/{job_id}/reject \u2014 Reject a copy job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/copy-jobs/:job_id/reject",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "copy-jobs",
+                ":job_id",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "job_12345",
+                  "description": "Copy job ID"
+                }
+              ]
+            },
+            "description": "Path param: job_id (string).\n\n**Docs:** https://docs.ocrolus.com/reference/copy-jobs-reject"
+          },
+          "response": []
+        },
+        {
+          "name": "book/copy-jobs/run-kickouts \u2014 Run automated kick-outs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/book/copy-jobs/run-kickouts",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "book",
+                "copy-jobs",
+                "run-kickouts"
+              ]
+            },
+            "description": "No params. Runs on all AWAITING_RECIPIENT jobs.\n\n**Docs:** https://docs.ocrolus.com/reference/run-kick-outs"
+          },
+          "response": []
+        },
+        {
+          "name": "settings/book-copy \u2014 Get book copy settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/settings/book-copy",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "settings",
+                "book-copy"
+              ]
+            },
+            "description": "No params.\n\n**Docs:** https://docs.ocrolus.com/reference/get-book-copy-settings-allow-list"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Income",
+      "description": "Income calculations, BSIC, and self-employed income",
+      "item": [
+        {
+          "name": "book/{book_uuid}/income-calculations \u2014 Income calculations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/income-calculations?guideline=FANNIE_MAE",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "income-calculations"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ],
+              "query": [
+                {
+                  "key": "guideline",
+                  "value": "FANNIE_MAE",
+                  "description": "Guideline: FANNIE_MAE, FREDDIE_MAC, FHA, VA, USDA",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Query param: guideline (string, optional).\n\n**Docs:** https://docs.ocrolus.com/reference/income-calculations"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/income-summary \u2014 Income summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/income-summary",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "income-summary"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/income-summary"
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/income-entity \u2014 Configure income entity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/income-entity",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "income-entity"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/income-entity-config",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"config\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/income-guideline \u2014 Save income guideline",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/income-guideline",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "income-guideline"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/save-income-guideline",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guideline\": \"FANNIE_MAE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/self-employed-income \u2014 Fannie Mae self-employed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/self-employed-income",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "self-employed-income"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Body: JSON. Call BEFORE income-calculations.\n\n**Docs:** https://docs.ocrolus.com/reference/self-employed-income-calculation-fm",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"params\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "book/{book_uuid}/bsic \u2014 BSIC results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/book/:book_uuid/bsic",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "book",
+                ":book_uuid",
+                "bsic"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Bank Statement Income Calculator results.\n\n**Docs:** https://docs.ocrolus.com/reference/bsic"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tag Management",
+      "description": "Transaction tag management (Beta)",
+      "item": [
+        {
+          "name": "analytics/tags \u2014 Create a transaction tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/tags",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "tags"
+              ]
+            },
+            "description": "Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/create-tag",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Book\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/tags/{tag_uuid} \u2014 Retrieve a tag",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/tags/:tag_uuid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "tags",
+                ":tag_uuid"
+              ],
+              "variable": [
+                {
+                  "key": "tag_uuid",
+                  "value": "eeee5555-ffff-6666-1111-777788889999",
+                  "description": "Tag UUID"
+                }
+              ]
+            },
+            "description": "Path param: tag_uuid (UUID).\n\n**Docs:** https://docs.ocrolus.com/reference/get-tag"
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/tags/{tag_uuid} \u2014 Modify a tag",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/tags/:tag_uuid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "tags",
+                ":tag_uuid"
+              ],
+              "variable": [
+                {
+                  "key": "tag_uuid",
+                  "value": "eeee5555-ffff-6666-1111-777788889999",
+                  "description": "Tag UUID"
+                }
+              ]
+            },
+            "description": "Path param: tag_uuid (UUID). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/modify-tag",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Book\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/tags/{tag_uuid} \u2014 Delete a tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/tags/:tag_uuid",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "tags",
+                ":tag_uuid"
+              ],
+              "variable": [
+                {
+                  "key": "tag_uuid",
+                  "value": "eeee5555-ffff-6666-1111-777788889999",
+                  "description": "Tag UUID"
+                }
+              ]
+            },
+            "description": "Path param: tag_uuid (UUID). System tags cannot be deleted.\n\n**Docs:** https://docs.ocrolus.com/reference/delete-tag"
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/tags \u2014 List all tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/tags?is_system_tag=false",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "tags"
+              ],
+              "query": [
+                {
+                  "key": "is_system_tag",
+                  "value": "false",
+                  "description": "Filter system vs custom tags",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Query param: is_system_tag (boolean, optional).\n\n**Docs:** https://docs.ocrolus.com/reference/get-all-tags"
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/revenue-deduction-tags \u2014 Get revenue deduction tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/revenue-deduction-tags",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "revenue-deduction-tags"
+              ]
+            },
+            "description": "**Docs:** https://docs.ocrolus.com/reference/get-revenue-deduction-tags"
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/revenue-deduction-tags \u2014 Update revenue deduction tags",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/revenue-deduction-tags",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "revenue-deduction-tags"
+              ]
+            },
+            "description": "Body: JSON. Replaces the full collection.\n\n**Docs:** https://docs.ocrolus.com/reference/update-revenue-deduction-tag",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tag_names\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "analytics/book/{book_uuid}/transactions \u2014 Override transaction tag",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v2/analytics/book/:book_uuid/transactions",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v2",
+                "analytics",
+                "book",
+                ":book_uuid",
+                "transactions"
+              ],
+              "variable": [
+                {
+                  "key": "book_uuid",
+                  "value": "09c52985-2f05-4022-a738-9277cc335c7e",
+                  "description": "Book UUID"
+                }
+              ]
+            },
+            "description": "Path param: book_uuid (UUID). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/override-transaction-tag",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"txn_pk\": \"\",\n  \"tag_uuids\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks (Account Level)",
+      "description": "Account-level webhook management (legacy)",
+      "item": [
+        {
+          "name": "webhook/configure \u2014 Configure account webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/webhook/configure",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "webhook",
+                "configure"
+              ]
+            },
+            "description": "Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/configure-webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/webhook\",\n  \"events\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "webhook/configuration \u2014 Get account webhook config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/webhook/configuration",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "webhook",
+                "configuration"
+              ]
+            },
+            "description": "No params.\n\n**Docs:** https://docs.ocrolus.com/reference/webhook-configuration"
+          },
+          "response": []
+        },
+        {
+          "name": "webhook/test \u2014 Test account webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/webhook/test",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "webhook",
+                "test"
+              ]
+            },
+            "description": "No params.\n\n**Docs:** https://docs.ocrolus.com/reference/test-webhook"
+          },
+          "response": []
+        },
+        {
+          "name": "webhook/secret \u2014 Configure account webhook secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/webhook/secret",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "webhook",
+                "secret"
+              ]
+            },
+            "description": "Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/configure-webhook-secret-account-level",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secret\": \"<webhook_secret_16_to_128_chars>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks (Org Level)",
+      "description": "Organization-level webhook management (recommended)",
+      "item": [
+        {
+          "name": "account/settings/webhook \u2014 Add org-level webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhook",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhook"
+              ]
+            },
+            "description": "Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/add-webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/webhook\",\n  \"events\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks \u2014 List org-level webhooks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks"
+              ]
+            },
+            "description": "No params.\n\n**Docs:** https://docs.ocrolus.com/reference/list-webhooks"
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/{webhook_id} \u2014 Retrieve webhook",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/:webhook_id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                ":webhook_id"
+              ],
+              "variable": [
+                {
+                  "key": "webhook_id",
+                  "value": "webhook_abc123",
+                  "description": "Webhook ID"
+                }
+              ]
+            },
+            "description": "Path param: webhook_id (string).\n\n**Docs:** https://docs.ocrolus.com/reference/get-webhook"
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/{webhook_id} \u2014 Update webhook",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/:webhook_id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                ":webhook_id"
+              ],
+              "variable": [
+                {
+                  "key": "webhook_id",
+                  "value": "webhook_abc123",
+                  "description": "Webhook ID"
+                }
+              ]
+            },
+            "description": "Path param: webhook_id (string). Body: JSON.\n\n**Docs:** https://docs.ocrolus.com/reference/update-webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/webhook\",\n  \"events\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/{webhook_id} \u2014 Delete webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/:webhook_id",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                ":webhook_id"
+              ],
+              "variable": [
+                {
+                  "key": "webhook_id",
+                  "value": "webhook_abc123",
+                  "description": "Webhook ID"
+                }
+              ]
+            },
+            "description": "Path param: webhook_id (string).\n\n**Docs:** https://docs.ocrolus.com/reference/delete-webhook"
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/events \u2014 List event types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/events",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                "events"
+              ]
+            },
+            "description": "No params.\n\n**Docs:** https://docs.ocrolus.com/reference/list-events"
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/{webhook_id}/test \u2014 Test webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/:webhook_id/test",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                ":webhook_id",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "webhook_id",
+                  "value": "webhook_abc123",
+                  "description": "Webhook ID"
+                }
+              ]
+            },
+            "description": "Path param: webhook_id (string).\n\n**Docs:** https://docs.ocrolus.com/reference/test-org-webhook"
+          },
+          "response": []
+        },
+        {
+          "name": "account/settings/webhooks/secret \u2014 Configure secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/account/settings/webhooks/secret",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "account",
+                "settings",
+                "webhooks",
+                "secret"
+              ]
+            },
+            "description": "Body: JSON. Secret must be 16-128 characters.\n\n**Docs:** https://docs.ocrolus.com/reference/configure-webhook-secret-org-level",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secret\": \"<webhook_secret_16_to_128_chars>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

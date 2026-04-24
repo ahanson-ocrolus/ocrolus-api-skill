@@ -466,29 +466,34 @@
         ],
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pk": {
-                  "type": "integer"
-                },
-                "book_uuid": {
-                  "type": "string"
-                },
-                "upload": {
-                  "type": "file"
-                },
-                "form_type": {
-                  "type": "string"
-                },
-                "doc_name": {
-                  "type": "string"
-                }
-              }
-            }
+            "name": "pk",
+            "in": "formData",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "book_uuid",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "upload",
+            "in": "formData",
+            "type": "file",
+            "required": true
+          },
+          {
+            "name": "form_type",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "doc_name",
+            "in": "formData",
+            "type": "string",
+            "required": false
           }
         ],
         "responses": {
@@ -507,7 +512,7 @@
         },
         "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Max 200MB. form_type and doc_name optional. | Docs: https://docs.ocrolus.com/reference/upload-document",
         "consumes": [
-          "application/json"
+          "multipart/form-data"
         ]
       }
     },
@@ -523,23 +528,22 @@
         ],
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pk": {
-                  "type": "integer"
-                },
-                "book_uuid": {
-                  "type": "string"
-                },
-                "upload": {
-                  "type": "file"
-                }
-              }
-            }
+            "name": "pk",
+            "in": "formData",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "book_uuid",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "upload",
+            "in": "formData",
+            "type": "file",
+            "required": true
           }
         ],
         "responses": {
@@ -558,7 +562,7 @@
         },
         "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Multiple doc types in single PDF. | Docs: https://docs.ocrolus.com/reference/upload-mixed-document",
         "consumes": [
-          "application/json"
+          "multipart/form-data"
         ]
       }
     },
@@ -574,23 +578,22 @@
         ],
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pk": {
-                  "type": "integer"
-                },
-                "book_uuid": {
-                  "type": "string"
-                },
-                "upload": {
-                  "type": "file"
-                }
-              }
-            }
+            "name": "pk",
+            "in": "formData",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "book_uuid",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "upload",
+            "in": "formData",
+            "type": "file",
+            "required": true
           }
         ],
         "responses": {
@@ -609,7 +612,7 @@
         },
         "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/upload-paystub",
         "consumes": [
-          "application/json"
+          "multipart/form-data"
         ]
       }
     },
@@ -625,26 +628,28 @@
         ],
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "pk": {
-                  "type": "integer"
-                },
-                "book_uuid": {
-                  "type": "string"
-                },
-                "upload": {
-                  "type": "file"
-                },
-                "image_group": {
-                  "type": "string"
-                }
-              }
-            }
+            "name": "pk",
+            "in": "formData",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "book_uuid",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "upload",
+            "in": "formData",
+            "type": "file",
+            "required": true
+          },
+          {
+            "name": "image_group",
+            "in": "formData",
+            "type": "string",
+            "required": false
           }
         ],
         "responses": {
@@ -663,7 +668,7 @@
         },
         "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/upload-image",
         "consumes": [
-          "application/json"
+          "multipart/form-data"
         ]
       }
     },
