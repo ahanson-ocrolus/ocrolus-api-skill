@@ -86,7 +86,7 @@ These are corrections from live API testing. The official docs are wrong or misl
 | Pitfall | Wrong | Correct | Why it matters |
 |---------|-------|---------|----------------|
 | Book create path | `/v1/book/create` | `/v1/book/add` | `/v1/book/create` returns HTTP 200 with an embedded 404 — looks like success but creates nothing |
-| Upload form field | `book_pk` in form data | `pk` in form data | Using `book_pk` returns "Required pk or book uuid" error |
+| Upload form field | `book_pk` in form data | `pk` or `book_uuid` in form data | Using `book_pk` returns "Required pk or book uuid" error |
 | Auth format | JSON body with `audience` param | Form-encoded, no `audience` | JSON body or adding `audience` causes 403 `unauthorized_client` |
 | Webhook event field | `event_type` | `event_name` | Parsing `event_type` from webhook payloads returns `None` |
 | Webhook subscription | API registration is sufficient | Must also subscribe in dashboard | Registering a webhook URL via API delivers zero events until you manually select event types in Dashboard > Settings > Webhooks |

@@ -71,8 +71,8 @@
         "tags": [
           "Authentication"
         ],
-        "operationId": "grantToken",
-        "summary": "Obtain OAuth 2.0 Bearer Token",
+        "operationId": "oauthToken",
+        "summary": "oauth/token \u2014 Obtain OAuth 2.0 Bearer Token",
         "consumes": [
           "application/x-www-form-urlencoded"
         ],
@@ -108,16 +108,16 @@
             "description": "Invalid credentials"
           }
         },
-        "description": "OAuth 2.0 client_credentials grant. Returns JWT with 24h expiry. Refresh at 12h."
+        "description": "Body: form-encoded (NOT JSON). OAuth 2.0 client_credentials grant. Returns JWT with 24h expiry. No 'audience' param. | Docs: https://docs.ocrolus.com/reference/grant-authentication-token"
       }
     },
-    "/v1/book/create": {
+    "/v1/book/add": {
       "post": {
         "tags": [
           "Book Operations"
         ],
-        "operationId": "createBook",
-        "summary": "Create a new Book",
+        "operationId": "bookAdd",
+        "summary": "book/add \u2014 Add a new Book",
         "produces": [
           "application/json"
         ],
@@ -153,7 +153,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns dict with book_pk (int) and book_uuid (str).",
+        "description": "CORRECTED from /v1/book/create. Returns pk (int) and uuid (str). Body: JSON. | Docs: https://docs.ocrolus.com/reference/create-a-book",
         "consumes": [
           "application/json"
         ]
@@ -164,8 +164,8 @@
         "tags": [
           "Book Operations"
         ],
-        "operationId": "deleteBook",
-        "summary": "Delete a Book",
+        "operationId": "bookDelete",
+        "summary": "book/delete \u2014 Delete a Book",
         "produces": [
           "application/json"
         ],
@@ -177,8 +177,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "book_id": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 }
               }
             }
@@ -198,6 +201,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). | Docs: https://docs.ocrolus.com/reference/delete-a-book",
         "consumes": [
           "application/json"
         ]
@@ -208,8 +212,8 @@
         "tags": [
           "Book Operations"
         ],
-        "operationId": "updateBook",
-        "summary": "Update Book properties",
+        "operationId": "bookUpdate",
+        "summary": "book/update \u2014 Update Book properties",
         "produces": [
           "application/json"
         ],
@@ -221,8 +225,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "name": {
                   "type": "string"
@@ -245,28 +252,29 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID string) + fields to update. | Docs: https://docs.ocrolus.com/reference/update-book",
         "consumes": [
           "application/json"
         ]
       }
     },
-    "/v1/book/{book_pk}": {
+    "/v1/book/{pk}": {
       "get": {
         "tags": [
           "Book Operations"
         ],
-        "operationId": "getBook",
-        "summary": "Get Book information",
+        "operationId": "bookInfo",
+        "summary": "book/{pk} \u2014 Get Book information",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "book_pk",
+            "name": "pk",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "Book primary key"
+            "description": "Book primary key (integer)"
           }
         ],
         "responses": {
@@ -282,7 +290,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: pk (integer). | Docs: https://docs.ocrolus.com/reference/book-info"
       }
     },
     "/v1/books": {
@@ -290,12 +299,27 @@
         "tags": [
           "Book Operations"
         ],
-        "operationId": "listBooks",
-        "summary": "List all Books",
+        "operationId": "booksList",
+        "summary": "books \u2014 List all Books",
         "produces": [
           "application/json"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Page number"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Results per page"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -309,7 +333,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Query params: page, per_page (both optional). | Docs: https://docs.ocrolus.com/reference/book-list"
       }
     },
     "/v1/book/status": {
@@ -317,8 +342,8 @@
         "tags": [
           "Book Operations"
         ],
-        "operationId": "getBookStatus",
-        "summary": "Get Book processing status",
+        "operationId": "bookStatus",
+        "summary": "book/status \u2014 Get Book processing status",
         "produces": [
           "application/json"
         ],
@@ -345,7 +370,7 @@
             "description": "Not found"
           }
         },
-        "description": "Some tenants may use /v1/book/{book_pk}/status instead. Run validate_endpoints.py to confirm."
+        "description": "Query param: book_pk (integer). Alt path: /v1/book/{pk}/status also works. | Docs: https://docs.ocrolus.com/reference/book-status"
       }
     },
     "/v1/book/loan/{loan_id}": {
@@ -353,8 +378,8 @@
         "tags": [
           "Book Operations"
         ],
-        "operationId": "getBookFromLoan",
-        "summary": "Get Book associated with a loan",
+        "operationId": "bookFromLoan",
+        "summary": "book/loan/{loan_id} \u2014 Get Book from loan",
         "produces": [
           "application/json"
         ],
@@ -380,26 +405,27 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: loan_id (string). | Docs: https://docs.ocrolus.com/reference/book-from-loan"
       }
     },
-    "/v1/book/{book_pk}/loan": {
+    "/v1/book/{pk}/loan": {
       "get": {
         "tags": [
           "Book Operations"
         ],
-        "operationId": "getLoanFromBook",
-        "summary": "Get loan details from a Book",
+        "operationId": "bookLoan",
+        "summary": "book/{pk}/loan \u2014 Get loan from Book",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "book_pk",
+            "name": "pk",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "Book primary key"
+            "description": "Book primary key (integer)"
           }
         ],
         "responses": {
@@ -415,7 +441,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: pk (integer). | Docs: https://docs.ocrolus.com/reference/loan-from-book"
       }
     },
     "/v1/book/upload": {
@@ -423,8 +450,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "uploadPdf",
-        "summary": "Upload a PDF document",
+        "operationId": "bookUpload",
+        "summary": "book/upload \u2014 Upload a PDF document",
         "produces": [
           "application/json"
         ],
@@ -436,13 +463,19 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "upload": {
                   "type": "file"
                 },
                 "form_type": {
+                  "type": "string"
+                },
+                "doc_name": {
                   "type": "string"
                 }
               }
@@ -463,7 +496,7 @@
             "description": "Not found"
           }
         },
-        "description": "Max file size: 200MB. form_type is optional; cannot be used for bank statements.",
+        "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Max 200MB. form_type and doc_name optional. | Docs: https://docs.ocrolus.com/reference/upload-document",
         "consumes": [
           "application/json"
         ]
@@ -474,8 +507,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "uploadMixedPdf",
-        "summary": "Upload a mixed document PDF",
+        "operationId": "bookUploadMixed",
+        "summary": "book/upload/mixed \u2014 Upload a mixed document PDF",
         "produces": [
           "application/json"
         ],
@@ -487,8 +520,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "upload": {
                   "type": "file"
@@ -511,7 +547,7 @@
             "description": "Not found"
           }
         },
-        "description": "Contains multiple document types in a single PDF.",
+        "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). Multiple doc types in single PDF. | Docs: https://docs.ocrolus.com/reference/upload-mixed-document",
         "consumes": [
           "application/json"
         ]
@@ -522,8 +558,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "uploadPaystub",
-        "summary": "Upload a pay stub PDF",
+        "operationId": "bookUploadPaystub",
+        "summary": "book/upload/paystub \u2014 Upload a pay stub PDF",
         "produces": [
           "application/json"
         ],
@@ -535,8 +571,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "upload": {
                   "type": "file"
@@ -559,6 +598,7 @@
             "description": "Not found"
           }
         },
+        "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/upload-paystub",
         "consumes": [
           "application/json"
         ]
@@ -569,8 +609,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "uploadImage",
-        "summary": "Upload an image",
+        "operationId": "bookUploadImage",
+        "summary": "book/upload/image \u2014 Upload an image",
         "produces": [
           "application/json"
         ],
@@ -582,8 +622,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "upload": {
                   "type": "file"
@@ -609,6 +652,7 @@
             "description": "Not found"
           }
         },
+        "description": "Form: multipart/form-data. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/upload-image",
         "consumes": [
           "application/json"
         ]
@@ -619,8 +663,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "finalizeImageGroup",
-        "summary": "Finalize an image group",
+        "operationId": "bookFinalizeImageGroup",
+        "summary": "book/finalize-image-group \u2014 Finalize an image group",
         "produces": [
           "application/json"
         ],
@@ -632,8 +676,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 },
                 "image_group": {
                   "type": "string"
@@ -656,6 +703,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/mark-image-group-complete",
         "consumes": [
           "application/json"
         ]
@@ -666,8 +714,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "uploadPlaidJson",
-        "summary": "Upload Plaid aggregator JSON",
+        "operationId": "bookUploadPlaid",
+        "summary": "book/upload/plaid \u2014 Upload Plaid aggregator JSON",
         "produces": [
           "application/json"
         ],
@@ -679,8 +727,11 @@
             "schema": {
               "type": "object",
               "properties": {
-                "book_pk": {
+                "pk": {
                   "type": "integer"
+                },
+                "book_uuid": {
+                  "type": "string"
                 }
               }
             }
@@ -700,6 +751,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. Provide pk (integer) or book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/upload-json",
         "consumes": [
           "application/json"
         ]
@@ -710,8 +762,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "importPlaidAsset",
-        "summary": "Import Plaid Asset Report",
+        "operationId": "bookImportPlaidAsset",
+        "summary": "book/import/plaid/asset \u2014 Import Plaid Asset Report",
         "produces": [
           "application/json"
         ],
@@ -744,7 +796,7 @@
             "description": "Not found"
           }
         },
-        "description": "Production only. Requires auditor_id: 'ocrolus'.",
+        "description": "Body: JSON. Production only. Requires auditor_id: 'ocrolus'. | Docs: https://docs.ocrolus.com/reference/import-plaid-asset-report",
         "consumes": [
           "application/json"
         ]
@@ -755,8 +807,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "cancelDocument",
-        "summary": "Cancel document verification",
+        "operationId": "documentCancel",
+        "summary": "document/cancel \u2014 Cancel document verification",
         "produces": [
           "application/json"
         ],
@@ -768,6 +820,25 @@
             "type": "string",
             "description": "Document UUID",
             "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "doc_pk": {
+                  "type": "integer"
+                },
+                "doc_uuid": {
+                  "type": "string"
+                },
+                "accept_charges": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -783,7 +854,11 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). Body (JSON, optional): doc_pk or doc_uuid, accept_charges. Official spec also supports query-param style: /v1/document/cancel?doc_uuid=X | Docs: https://docs.ocrolus.com/reference/cancel-file-verification",
+        "consumes": [
+          "application/json"
+        ]
       }
     },
     "/v1/document/{doc_uuid}/delete": {
@@ -791,8 +866,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "deleteDocument",
-        "summary": "Delete a document",
+        "operationId": "documentDelete",
+        "summary": "document/remove \u2014 Delete a document",
         "produces": [
           "application/json"
         ],
@@ -804,6 +879,22 @@
             "type": "string",
             "description": "Document UUID",
             "format": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "doc_id": {
+                  "type": "integer"
+                },
+                "doc_uuid": {
+                  "type": "string"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -819,7 +910,11 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). Body (JSON): doc_id (integer) or doc_uuid (UUID). Official spec also supports query-param style: /v1/document/remove?doc_uuid=X | Docs: https://docs.ocrolus.com/reference/delete-a-file",
+        "consumes": [
+          "application/json"
+        ]
       }
     },
     "/v1/document/{doc_uuid}/download": {
@@ -827,8 +922,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "downloadDocument",
-        "summary": "Download a document file",
+        "operationId": "documentDownload",
+        "summary": "document/{doc_uuid}/download \u2014 Download a document file",
         "produces": [
           "application/octet-stream"
         ],
@@ -855,7 +950,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/document-download"
       }
     },
     "/v1/document/{doc_uuid}/upgrade": {
@@ -863,8 +959,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "upgradeDocument",
-        "summary": "Upgrade document processing type",
+        "operationId": "documentUpgrade",
+        "summary": "document/upgrade \u2014 Upgrade document processing",
         "produces": [
           "application/json"
         ],
@@ -884,7 +980,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "target_type": {
+                "doc_pk": {
+                  "type": "integer"
+                },
+                "doc_uuid": {
+                  "type": "string"
+                },
+                "upgrade_type": {
                   "type": "string"
                 }
               }
@@ -905,6 +1007,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: doc_uuid (UUID). Body (JSON): doc_pk or doc_uuid + upgrade_type. Official spec also supports: /v1/document/upgrade?doc_uuid=X | Docs: https://docs.ocrolus.com/reference/upgrade-doc",
         "consumes": [
           "application/json"
         ]
@@ -915,8 +1018,8 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "upgradeMixedDocument",
-        "summary": "Upgrade mixed document processing",
+        "operationId": "documentMixedUpgrade",
+        "summary": "document/mixed/upgrade \u2014 Upgrade mixed document",
         "produces": [
           "application/json"
         ],
@@ -928,10 +1031,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "mixed_doc_id": {
+                "mixed_doc_pk": {
+                  "type": "integer"
+                },
+                "mixed_doc_uuid": {
                   "type": "string"
                 },
-                "target_type": {
+                "upgrade_type": {
                   "type": "string"
                 }
               }
@@ -952,6 +1058,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body (JSON): mixed_doc_pk (integer) or mixed_doc_uuid (UUID) + upgrade_type. | Docs: https://docs.ocrolus.com/reference/upgrade-mixed-doc",
         "consumes": [
           "application/json"
         ]
@@ -962,18 +1069,34 @@
         "tags": [
           "Document Upload"
         ],
-        "operationId": "getMixedDocumentStatus",
-        "summary": "Get mixed document status",
+        "operationId": "documentMixedStatus",
+        "summary": "document/mixed/status \u2014 Get mixed document status",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "mixed_doc_id",
+            "name": "pk",
             "in": "query",
-            "required": true,
+            "required": false,
+            "type": "integer",
+            "description": "Mixed document primary key"
+          },
+          {
+            "name": "doc_uuid",
+            "in": "query",
+            "required": false,
             "type": "string",
-            "description": "Mixed document ID"
+            "description": "Document UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "mixed_doc_uuid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Mixed document UUID",
+            "format": "uuid"
           }
         ],
         "responses": {
@@ -989,7 +1112,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Query params: exactly one of pk (integer), doc_uuid (UUID), or mixed_doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/mixed-document-status"
       }
     },
     "/v2/book/{book_uuid}/classification-summary": {
@@ -997,8 +1121,8 @@
         "tags": [
           "Classification"
         ],
-        "operationId": "getBookClassification",
-        "summary": "Get book classification summary",
+        "operationId": "bookClassificationSummary",
+        "summary": "book/{book_uuid}/classification-summary \u2014 Book classification",
         "produces": [
           "application/json"
         ],
@@ -1026,7 +1150,7 @@
             "description": "Not found"
           }
         },
-        "description": "Identifies 300+ document types with confidence scores (0-1)."
+        "description": "Path param: book_uuid (UUID). Identifies 300+ document types with confidence scores (0-1). | Docs: https://docs.ocrolus.com/reference/book-classification-summary"
       }
     },
     "/v2/mixed-document/{mixed_doc_uuid}/classification-summary": {
@@ -1034,44 +1158,8 @@
         "tags": [
           "Classification"
         ],
-        "operationId": "getMixedDocClassification",
-        "summary": "Get mixed doc classification summary",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "mixed_doc_uuid",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "description": "Mixed document UUID",
-            "format": "uuid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/v2/index/mixed-doc/{mixed_doc_uuid}/summary": {
-      "get": {
-        "tags": [
-          "Classification"
-        ],
-        "operationId": "getGroupedMixedDocSummary",
-        "summary": "Get grouped mixed doc summary",
+        "operationId": "mixedDocClassificationSummary",
+        "summary": "mixed-document/{mixed_doc_uuid}/classification-summary",
         "produces": [
           "application/json"
         ],
@@ -1099,26 +1187,27 @@
             "description": "Not found"
           }
         },
-        "description": "Organizes forms into logical groups with uniqueness values."
+        "description": "Path param: mixed_doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/mixed-doc-classification-summary"
       }
     },
-    "/v1/book/{book_pk}/forms": {
+    "/v2/index/mixed-doc/{mixed_doc_uuid}/summary": {
       "get": {
         "tags": [
-          "Data Extraction"
+          "Classification"
         ],
-        "operationId": "getBookForms",
-        "summary": "Get book form data",
+        "operationId": "groupedMixedDocSummary",
+        "summary": "index/mixed-doc/{mixed_doc_uuid}/summary \u2014 Grouped classification",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "book_pk",
+            "name": "mixed_doc_uuid",
             "in": "path",
             "required": true,
-            "type": "integer",
-            "description": "Book primary key"
+            "type": "string",
+            "description": "Mixed document UUID",
+            "format": "uuid"
           }
         ],
         "responses": {
@@ -1134,26 +1223,27 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: mixed_doc_uuid (UUID). Organizes forms into logical groups with uniqueness values. | Docs: https://docs.ocrolus.com/reference/grouped-mixed-doc-classification-summary"
       }
     },
-    "/v1/book/{book_pk}/paystubs": {
+    "/v1/book/{pk}/forms": {
       "get": {
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getBookPaystubs",
-        "summary": "Get book pay stub data",
+        "operationId": "bookForms",
+        "summary": "book/{pk}/forms \u2014 Get book form data",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "book_pk",
+            "name": "pk",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "Book primary key"
+            "description": "Book primary key (integer)"
           }
         ],
         "responses": {
@@ -1169,7 +1259,44 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: pk (integer). | Docs: https://docs.ocrolus.com/reference/book-form-data"
+      }
+    },
+    "/v1/book/{pk}/paystubs": {
+      "get": {
+        "tags": [
+          "Data Extraction"
+        ],
+        "operationId": "bookPaystubs",
+        "summary": "book/{pk}/paystubs \u2014 Get book pay stub data",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "pk",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Book primary key (integer)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "description": "Path param: pk (integer). | Docs: https://docs.ocrolus.com/reference/book-paystub-data"
       }
     },
     "/v1/document/{doc_uuid}/forms": {
@@ -1177,8 +1304,8 @@
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getDocumentForms",
-        "summary": "Get document form data",
+        "operationId": "documentForms",
+        "summary": "document/{doc_uuid}/forms \u2014 Get document form data",
         "produces": [
           "application/json"
         ],
@@ -1205,7 +1332,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/doc-form-data"
       }
     },
     "/v1/document/{doc_uuid}/paystubs": {
@@ -1213,8 +1341,8 @@
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getDocumentPaystubs",
-        "summary": "Get document pay stub data",
+        "operationId": "documentPaystubs",
+        "summary": "document/{doc_uuid}/paystubs \u2014 Get document pay stub data",
         "produces": [
           "application/json"
         ],
@@ -1241,7 +1369,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/doc-paystub-data"
       }
     },
     "/v1/form/{form_uuid}/fields": {
@@ -1249,8 +1378,8 @@
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getFormFields",
-        "summary": "Get form field data",
+        "operationId": "formFields",
+        "summary": "form/{form_uuid}/fields \u2014 Get form field data",
         "produces": [
           "application/json"
         ],
@@ -1278,7 +1407,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns confidence scores per field (0-1)."
+        "description": "Path param: form_uuid (UUID). Returns confidence scores per field (0-1). | Docs: https://docs.ocrolus.com/reference/form-field-data"
       }
     },
     "/v1/paystub/{paystub_uuid}": {
@@ -1286,8 +1415,8 @@
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getPaystub",
-        "summary": "Get pay stub data",
+        "operationId": "paystubData",
+        "summary": "paystub/{paystub_uuid} \u2014 Get pay stub data",
         "produces": [
           "application/json"
         ],
@@ -1314,26 +1443,56 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: paystub_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/paystub-data"
       }
     },
-    "/v1/book/{book_pk}/transactions": {
+    "/v1/book/{pk}/transactions": {
       "get": {
         "tags": [
           "Data Extraction"
         ],
-        "operationId": "getBookTransactions",
-        "summary": "Get book transactions",
+        "operationId": "bookTransactions",
+        "summary": "book/{pk}/transactions \u2014 Get book transactions",
         "produces": [
           "application/json"
         ],
         "parameters": [
           {
-            "name": "book_pk",
+            "name": "pk",
             "in": "path",
             "required": true,
             "type": "integer",
-            "description": "Book primary key"
+            "description": "Book primary key (integer)"
+          },
+          {
+            "name": "uploaded_doc_pk",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Filter by uploaded document primary key"
+          },
+          {
+            "name": "uploaded_doc_uuid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Filter by uploaded document UUID",
+            "format": "uuid"
+          },
+          {
+            "name": "only_tagged",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "description": "Only return tagged transactions (requires distinct_fields=true)"
+          },
+          {
+            "name": "distinct_fields",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "description": "Return only distinct field values"
           }
         ],
         "responses": {
@@ -1349,7 +1508,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: pk (integer). Query params (optional): uploaded_doc_pk, uploaded_doc_uuid, only_tagged, distinct_fields. Alt: /v1/transaction?book_pk=X also works. | Docs: https://docs.ocrolus.com/reference/transactions"
       }
     },
     "/v2/detect/book/{book_uuid}/signals": {
@@ -1357,8 +1517,8 @@
         "tags": [
           "Fraud Detection"
         ],
-        "operationId": "getBookFraudSignals",
-        "summary": "Get book-level fraud signals",
+        "operationId": "detectBookSignals",
+        "summary": "detect/book/{book_uuid}/signals \u2014 Book-level fraud signals",
         "produces": [
           "application/json"
         ],
@@ -1386,7 +1546,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns authenticity scores (0-100), reason codes, and signal types for all documents."
+        "description": "Path param: book_uuid (UUID). Returns authenticity scores (0-100), reason codes, and signal types. | Docs: https://docs.ocrolus.com/reference/book-fraud-signals"
       }
     },
     "/v2/detect/document/{doc_uuid}/signals": {
@@ -1394,8 +1554,8 @@
         "tags": [
           "Fraud Detection"
         ],
-        "operationId": "getDocumentFraudSignals",
-        "summary": "Get document-level fraud signals",
+        "operationId": "detectDocumentSignals",
+        "summary": "detect/document/{doc_uuid}/signals \u2014 Document-level fraud signals",
         "produces": [
           "application/json"
         ],
@@ -1422,7 +1582,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: doc_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/doc-fraud-signals"
       }
     },
     "/v2/detect/visualization/{visualization_uuid}": {
@@ -1430,8 +1591,8 @@
         "tags": [
           "Fraud Detection"
         ],
-        "operationId": "getFraudVisualization",
-        "summary": "Get fraud signal visualization",
+        "operationId": "detectVisualization",
+        "summary": "detect/visualization/{visualization_uuid} \u2014 Signal visualization",
         "produces": [
           "application/octet-stream"
         ],
@@ -1459,7 +1620,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns binary image with fraud signal overlays. Cannot be hotlinked."
+        "description": "Path param: visualization_uuid (UUID). Returns binary image with fraud signal overlays. | Docs: https://docs.ocrolus.com/reference/signal-visualization"
       }
     },
     "/v1/book/{book_uuid}/suspicious-activity-flags": {
@@ -1467,8 +1628,8 @@
         "tags": [
           "Fraud Detection"
         ],
-        "operationId": "getSuspiciousActivityFlags",
-        "summary": "Get suspicious activity flags (LEGACY)",
+        "operationId": "suspiciousActivityFlags",
+        "summary": "book/{book_uuid}/suspicious-activity-flags \u2014 LEGACY",
         "produces": [
           "application/json"
         ],
@@ -1497,7 +1658,7 @@
           }
         },
         "deprecated": true,
-        "description": "DEPRECATED. Use /v2/detect/ endpoints instead."
+        "description": "DEPRECATED. Use /v2/detect/ endpoints instead. Path param: book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/suspicious-activity"
       }
     },
     "/v2/book/{book_uuid}/summary": {
@@ -1505,8 +1666,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getBookSummary",
-        "summary": "Get cash flow analytics summary",
+        "operationId": "bookSummary",
+        "summary": "book/{book_uuid}/summary \u2014 Cash flow summary",
         "produces": [
           "application/json"
         ],
@@ -1534,7 +1695,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns daily balances, PII, and time series data."
+        "description": "Path param: book_uuid (UUID). Returns daily balances, PII, and time series data. | Docs: https://docs.ocrolus.com/reference/book-summary"
       }
     },
     "/v2/book/{book_uuid}/cash_flow_features": {
@@ -1542,8 +1703,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getCashFlowFeatures",
-        "summary": "Get cash flow features",
+        "operationId": "bookCashFlowFeatures",
+        "summary": "book/{book_uuid}/cash_flow_features \u2014 Cash flow features",
         "produces": [
           "application/json"
         ],
@@ -1577,7 +1738,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: book_uuid (UUID). Query param: min_days_to_include (integer, optional). | Docs: https://docs.ocrolus.com/reference/cash-flow-features"
       }
     },
     "/v2/book/{book_uuid}/enriched_txns": {
@@ -1585,8 +1747,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getEnrichedTransactions",
-        "summary": "Get enriched transactions",
+        "operationId": "bookEnrichedTxns",
+        "summary": "book/{book_uuid}/enriched_txns \u2014 Enriched transactions",
         "produces": [
           "application/json"
         ],
@@ -1614,7 +1776,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns transactions with categories and tags."
+        "description": "Path param: book_uuid (UUID). Returns transactions with categories and tags. | Docs: https://docs.ocrolus.com/reference/enriched-transactions"
       }
     },
     "/v2/book/{book_uuid}/cash_flow_risk_score": {
@@ -1622,8 +1784,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getRiskScore",
-        "summary": "Get cash flow risk score",
+        "operationId": "bookCashFlowRiskScore",
+        "summary": "book/{book_uuid}/cash_flow_risk_score \u2014 Risk score",
         "produces": [
           "application/json"
         ],
@@ -1651,7 +1813,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns probability of default."
+        "description": "Path param: book_uuid (UUID). Returns probability of default. | Docs: https://docs.ocrolus.com/reference/risk-score"
       }
     },
     "/v2/book/{book_uuid}/benchmarking": {
@@ -1659,8 +1821,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getBenchmarking",
-        "summary": "Get cash flow benchmarking (Beta)",
+        "operationId": "bookBenchmarking",
+        "summary": "book/{book_uuid}/benchmarking \u2014 Benchmarking (Beta)",
         "produces": [
           "application/json"
         ],
@@ -1688,7 +1850,7 @@
             "description": "Not found"
           }
         },
-        "description": "NAICS4-based benchmarking. Beta feature."
+        "description": "Path param: book_uuid (UUID). NAICS4-based benchmarking. Beta feature."
       }
     },
     "/v2/book/{book_uuid}/lender_analytics/xlsx": {
@@ -1696,8 +1858,8 @@
         "tags": [
           "Cash Flow Analytics"
         ],
-        "operationId": "getAnalyticsExcel",
-        "summary": "Download SMB analytics Excel",
+        "operationId": "bookLenderAnalyticsXlsx",
+        "summary": "book/{book_uuid}/lender_analytics/xlsx \u2014 SMB analytics Excel",
         "produces": [
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ],
@@ -1725,7 +1887,7 @@
             "description": "Not found"
           }
         },
-        "description": "Returns .xlsx binary content."
+        "description": "Path param: book_uuid (UUID). Returns .xlsx binary content. | Docs: https://docs.ocrolus.com/reference/analytics-excel"
       }
     },
     "/v2/book/{book_uuid}/income-calculations": {
@@ -1733,8 +1895,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "getIncomeCalculations",
-        "summary": "Get income calculations",
+        "operationId": "bookIncomeCalculations",
+        "summary": "book/{book_uuid}/income-calculations \u2014 Income calculations",
         "produces": [
           "application/json"
         ],
@@ -1746,6 +1908,13 @@
             "type": "string",
             "description": "Book UUID",
             "format": "uuid"
+          },
+          {
+            "name": "guideline",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Guideline: FANNIE_MAE, FREDDIE_MAC, FHA, VA, USDA"
           }
         ],
         "responses": {
@@ -1761,7 +1930,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: book_uuid (UUID). Query param: guideline (string, optional). | Docs: https://docs.ocrolus.com/reference/income-calculations"
       }
     },
     "/v2/book/{book_uuid}/income-summary": {
@@ -1769,8 +1939,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "getIncomeSummary",
-        "summary": "Get income summary",
+        "operationId": "bookIncomeSummary",
+        "summary": "book/{book_uuid}/income-summary \u2014 Income summary",
         "produces": [
           "application/json"
         ],
@@ -1797,7 +1967,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: book_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/income-summary"
       }
     },
     "/v2/book/{book_uuid}/income-entity": {
@@ -1805,8 +1976,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "configureIncomeEntity",
-        "summary": "Configure income entity",
+        "operationId": "bookIncomeEntity",
+        "summary": "book/{book_uuid}/income-entity \u2014 Configure income entity",
         "produces": [
           "application/json"
         ],
@@ -1847,6 +2018,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: book_uuid (UUID). Body: JSON. | Docs: https://docs.ocrolus.com/reference/income-entity-config",
         "consumes": [
           "application/json"
         ]
@@ -1857,8 +2029,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "saveIncomeGuideline",
-        "summary": "Save income guideline",
+        "operationId": "bookIncomeGuideline",
+        "summary": "book/{book_uuid}/income-guideline \u2014 Save income guideline",
         "produces": [
           "application/json"
         ],
@@ -1899,6 +2071,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: book_uuid (UUID). Body: JSON. | Docs: https://docs.ocrolus.com/reference/save-income-guideline",
         "consumes": [
           "application/json"
         ]
@@ -1909,8 +2082,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "calculateSelfEmployedIncome",
-        "summary": "Calculate Fannie Mae self-employed income",
+        "operationId": "bookSelfEmployedIncome",
+        "summary": "book/{book_uuid}/self-employed-income \u2014 Fannie Mae self-employed",
         "produces": [
           "application/json"
         ],
@@ -1951,7 +2124,7 @@
             "description": "Not found"
           }
         },
-        "description": "Call BEFORE getIncomeCalculations.",
+        "description": "Path param: book_uuid (UUID). Body: JSON. Call BEFORE income-calculations. | Docs: https://docs.ocrolus.com/reference/self-employed-income-calculation-fm",
         "consumes": [
           "application/json"
         ]
@@ -1962,8 +2135,8 @@
         "tags": [
           "Income Calculations"
         ],
-        "operationId": "getBsic",
-        "summary": "Get BSIC results",
+        "operationId": "bookBsic",
+        "summary": "book/{book_uuid}/bsic \u2014 BSIC results",
         "produces": [
           "application/json"
         ],
@@ -1991,7 +2164,7 @@
             "description": "Not found"
           }
         },
-        "description": "Bank Statement Income Calculator results."
+        "description": "Path param: book_uuid (UUID). Bank Statement Income Calculator results. | Docs: https://docs.ocrolus.com/reference/bsic"
       }
     },
     "/v2/analytics/tags": {
@@ -1999,8 +2172,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "createTag",
-        "summary": "Create a custom transaction tag",
+        "operationId": "analyticsTagsCreate",
+        "summary": "analytics/tags \u2014 Create a transaction tag",
         "produces": [
           "application/json"
         ],
@@ -2033,6 +2206,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. | Docs: https://docs.ocrolus.com/reference/create-tag",
         "consumes": [
           "application/json"
         ]
@@ -2041,8 +2215,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "listTags",
-        "summary": "List all tags",
+        "operationId": "analyticsTagsList",
+        "summary": "analytics/tags \u2014 List all tags",
         "produces": [
           "application/json"
         ],
@@ -2068,7 +2242,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Query param: is_system_tag (boolean, optional). | Docs: https://docs.ocrolus.com/reference/get-all-tags"
       }
     },
     "/v2/analytics/tags/{tag_uuid}": {
@@ -2076,8 +2251,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "getTag",
-        "summary": "Retrieve a tag",
+        "operationId": "analyticsTagGet",
+        "summary": "analytics/tags/{tag_uuid} \u2014 Retrieve a tag",
         "produces": [
           "application/json"
         ],
@@ -2104,14 +2279,15 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: tag_uuid (UUID). | Docs: https://docs.ocrolus.com/reference/get-tag"
       },
       "put": {
         "tags": [
           "Tag Management"
         ],
-        "operationId": "modifyTag",
-        "summary": "Modify a tag",
+        "operationId": "analyticsTagModify",
+        "summary": "analytics/tags/{tag_uuid} \u2014 Modify a tag",
         "produces": [
           "application/json"
         ],
@@ -2152,6 +2328,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: tag_uuid (UUID). Body: JSON. | Docs: https://docs.ocrolus.com/reference/modify-tag",
         "consumes": [
           "application/json"
         ]
@@ -2160,8 +2337,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "deleteTag",
-        "summary": "Delete a tag",
+        "operationId": "analyticsTagDelete",
+        "summary": "analytics/tags/{tag_uuid} \u2014 Delete a tag",
         "produces": [
           "application/json"
         ],
@@ -2189,7 +2366,7 @@
             "description": "Not found"
           }
         },
-        "description": "System tags cannot be deleted."
+        "description": "Path param: tag_uuid (UUID). System tags cannot be deleted. | Docs: https://docs.ocrolus.com/reference/delete-tag"
       }
     },
     "/v2/analytics/revenue-deduction-tags": {
@@ -2197,8 +2374,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "getRevenueDeductionTags",
-        "summary": "Get revenue deduction tags",
+        "operationId": "analyticsRevenueDeductionTagsGet",
+        "summary": "analytics/revenue-deduction-tags \u2014 Get revenue deduction tags",
         "produces": [
           "application/json"
         ],
@@ -2216,14 +2393,15 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Docs: https://docs.ocrolus.com/reference/get-revenue-deduction-tags"
       },
       "put": {
         "tags": [
           "Tag Management"
         ],
-        "operationId": "updateRevenueDeductionTags",
-        "summary": "Update revenue deduction tags",
+        "operationId": "analyticsRevenueDeductionTagsUpdate",
+        "summary": "analytics/revenue-deduction-tags \u2014 Update revenue deduction tags",
         "produces": [
           "application/json"
         ],
@@ -2259,7 +2437,7 @@
             "description": "Not found"
           }
         },
-        "description": "Replaces the full collection.",
+        "description": "Body: JSON. Replaces the full collection. | Docs: https://docs.ocrolus.com/reference/update-revenue-deduction-tag",
         "consumes": [
           "application/json"
         ]
@@ -2270,8 +2448,8 @@
         "tags": [
           "Tag Management"
         ],
-        "operationId": "overrideTransactionTag",
-        "summary": "Override transaction tag",
+        "operationId": "analyticsBookTransactionsOverride",
+        "summary": "analytics/book/{book_uuid}/transactions \u2014 Override transaction tag",
         "produces": [
           "application/json"
         ],
@@ -2318,6 +2496,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: book_uuid (UUID). Body: JSON. | Docs: https://docs.ocrolus.com/reference/override-transaction-tag",
         "consumes": [
           "application/json"
         ]
@@ -2328,8 +2507,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "createBookCopyJobs",
-        "summary": "Create book copy jobs",
+        "operationId": "bookCopyJobsCreate",
+        "summary": "book/copy-jobs \u2014 Create book copy jobs",
         "produces": [
           "application/json"
         ],
@@ -2365,7 +2544,7 @@
             "description": "Not found"
           }
         },
-        "description": "Max 50 jobs per call.",
+        "description": "Body: JSON. Max 50 jobs per call. | Docs: https://docs.ocrolus.com/reference/create-book-copy-jobs",
         "consumes": [
           "application/json"
         ]
@@ -2374,8 +2553,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "listBookCopyJobs",
-        "summary": "List book copy jobs",
+        "operationId": "bookCopyJobsList",
+        "summary": "book/copy-jobs \u2014 List book copy jobs",
         "produces": [
           "application/json"
         ],
@@ -2401,7 +2580,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Query param: direction (string, optional \u2014 'outbound' or 'inbound'). | Docs: https://docs.ocrolus.com/reference/list-book-copy-jobs"
       }
     },
     "/v1/book/copy-jobs/{job_id}/accept": {
@@ -2409,8 +2589,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "acceptBookCopyJob",
-        "summary": "Accept a book copy job",
+        "operationId": "bookCopyJobAccept",
+        "summary": "book/copy-jobs/{job_id}/accept \u2014 Accept a copy job",
         "produces": [
           "application/json"
         ],
@@ -2450,6 +2630,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: job_id (string). Body: JSON. | Docs: https://docs.ocrolus.com/reference/copy-jobs-accept",
         "consumes": [
           "application/json"
         ]
@@ -2460,8 +2641,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "rejectBookCopyJob",
-        "summary": "Reject a book copy job",
+        "operationId": "bookCopyJobReject",
+        "summary": "book/copy-jobs/{job_id}/reject \u2014 Reject a copy job",
         "produces": [
           "application/json"
         ],
@@ -2487,7 +2668,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: job_id (string). | Docs: https://docs.ocrolus.com/reference/copy-jobs-reject"
       }
     },
     "/v1/book/copy-jobs/run-kickouts": {
@@ -2495,8 +2677,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "runBookCopyKickouts",
-        "summary": "Run automated kick-outs",
+        "operationId": "bookCopyJobsRunKickouts",
+        "summary": "book/copy-jobs/run-kickouts \u2014 Run automated kick-outs",
         "produces": [
           "application/json"
         ],
@@ -2515,7 +2697,7 @@
             "description": "Not found"
           }
         },
-        "description": "Runs on all AWAITING_RECIPIENT jobs."
+        "description": "No params. Runs on all AWAITING_RECIPIENT jobs. | Docs: https://docs.ocrolus.com/reference/run-kick-outs"
       }
     },
     "/v1/settings/book-copy": {
@@ -2523,8 +2705,8 @@
         "tags": [
           "Encore / Book Copy"
         ],
-        "operationId": "getBookCopySettings",
-        "summary": "Get book copy settings",
+        "operationId": "settingsBookCopy",
+        "summary": "settings/book-copy \u2014 Get book copy settings",
         "produces": [
           "application/json"
         ],
@@ -2542,7 +2724,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "No params. | Docs: https://docs.ocrolus.com/reference/get-book-copy-settings-allow-list"
       }
     },
     "/v1/account/settings/webhook": {
@@ -2550,8 +2733,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "addOrgWebhook",
-        "summary": "Add org-level webhook",
+        "operationId": "accountSettingsWebhookAdd",
+        "summary": "account/settings/webhook \u2014 Add org-level webhook",
         "produces": [
           "application/json"
         ],
@@ -2590,6 +2773,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. | Docs: https://docs.ocrolus.com/reference/add-webhook",
         "consumes": [
           "application/json"
         ]
@@ -2600,8 +2784,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "listOrgWebhooks",
-        "summary": "List org-level webhooks",
+        "operationId": "accountSettingsWebhooksList",
+        "summary": "account/settings/webhooks \u2014 List org-level webhooks",
         "produces": [
           "application/json"
         ],
@@ -2619,7 +2803,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "No params. | Docs: https://docs.ocrolus.com/reference/list-webhooks"
       }
     },
     "/v1/account/settings/webhooks/{webhook_id}": {
@@ -2627,8 +2812,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "getOrgWebhook",
-        "summary": "Retrieve org-level webhook",
+        "operationId": "accountSettingsWebhookGet",
+        "summary": "account/settings/webhooks/{webhook_id} \u2014 Retrieve webhook",
         "produces": [
           "application/json"
         ],
@@ -2654,14 +2839,15 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: webhook_id (string). | Docs: https://docs.ocrolus.com/reference/get-webhook"
       },
       "put": {
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "updateOrgWebhook",
-        "summary": "Update org-level webhook",
+        "operationId": "accountSettingsWebhookUpdate",
+        "summary": "account/settings/webhooks/{webhook_id} \u2014 Update webhook",
         "produces": [
           "application/json"
         ],
@@ -2707,6 +2893,7 @@
             "description": "Not found"
           }
         },
+        "description": "Path param: webhook_id (string). Body: JSON. | Docs: https://docs.ocrolus.com/reference/update-webhook",
         "consumes": [
           "application/json"
         ]
@@ -2715,8 +2902,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "deleteOrgWebhook",
-        "summary": "Delete org-level webhook",
+        "operationId": "accountSettingsWebhookDelete",
+        "summary": "account/settings/webhooks/{webhook_id} \u2014 Delete webhook",
         "produces": [
           "application/json"
         ],
@@ -2742,7 +2929,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: webhook_id (string). | Docs: https://docs.ocrolus.com/reference/delete-webhook"
       }
     },
     "/v1/account/settings/webhooks/events": {
@@ -2750,8 +2938,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "listOrgWebhookEvents",
-        "summary": "List webhook event types",
+        "operationId": "accountSettingsWebhooksEvents",
+        "summary": "account/settings/webhooks/events \u2014 List event types",
         "produces": [
           "application/json"
         ],
@@ -2769,7 +2957,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "No params. | Docs: https://docs.ocrolus.com/reference/list-events"
       }
     },
     "/v1/account/settings/webhooks/{webhook_id}/test": {
@@ -2777,8 +2966,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "testOrgWebhook",
-        "summary": "Test org-level webhook",
+        "operationId": "accountSettingsWebhookTest",
+        "summary": "account/settings/webhooks/{webhook_id}/test \u2014 Test webhook",
         "produces": [
           "application/json"
         ],
@@ -2804,7 +2993,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "Path param: webhook_id (string). | Docs: https://docs.ocrolus.com/reference/test-org-webhook"
       }
     },
     "/v1/account/settings/webhooks/secret": {
@@ -2812,8 +3002,8 @@
         "tags": [
           "Webhooks (Org)"
         ],
-        "operationId": "configureOrgWebhookSecret",
-        "summary": "Configure org webhook secret",
+        "operationId": "accountSettingsWebhooksSecret",
+        "summary": "account/settings/webhooks/secret \u2014 Configure secret",
         "produces": [
           "application/json"
         ],
@@ -2846,7 +3036,7 @@
             "description": "Not found"
           }
         },
-        "description": "Secret must be 16-128 characters.",
+        "description": "Body: JSON. Secret must be 16-128 characters. | Docs: https://docs.ocrolus.com/reference/configure-webhook-secret-org-level",
         "consumes": [
           "application/json"
         ]
@@ -2857,8 +3047,8 @@
         "tags": [
           "Webhooks (Account)"
         ],
-        "operationId": "configureAccountWebhook",
-        "summary": "Configure account webhook",
+        "operationId": "webhookConfigure",
+        "summary": "webhook/configure \u2014 Configure account webhook",
         "produces": [
           "application/json"
         ],
@@ -2897,6 +3087,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. | Docs: https://docs.ocrolus.com/reference/configure-webhook",
         "consumes": [
           "application/json"
         ]
@@ -2907,8 +3098,8 @@
         "tags": [
           "Webhooks (Account)"
         ],
-        "operationId": "getAccountWebhookConfig",
-        "summary": "Get account webhook config",
+        "operationId": "webhookConfiguration",
+        "summary": "webhook/configuration \u2014 Get account webhook config",
         "produces": [
           "application/json"
         ],
@@ -2926,7 +3117,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "No params. | Docs: https://docs.ocrolus.com/reference/webhook-configuration"
       }
     },
     "/v1/webhook/test": {
@@ -2934,8 +3126,8 @@
         "tags": [
           "Webhooks (Account)"
         ],
-        "operationId": "testAccountWebhook",
-        "summary": "Test account webhook",
+        "operationId": "webhookTest",
+        "summary": "webhook/test \u2014 Test account webhook",
         "produces": [
           "application/json"
         ],
@@ -2953,7 +3145,8 @@
           "404": {
             "description": "Not found"
           }
-        }
+        },
+        "description": "No params. | Docs: https://docs.ocrolus.com/reference/test-webhook"
       }
     },
     "/v1/webhook/secret": {
@@ -2961,8 +3154,8 @@
         "tags": [
           "Webhooks (Account)"
         ],
-        "operationId": "configureAccountWebhookSecret",
-        "summary": "Configure account webhook secret",
+        "operationId": "webhookSecret",
+        "summary": "webhook/secret \u2014 Configure account webhook secret",
         "produces": [
           "application/json"
         ],
@@ -2995,6 +3188,7 @@
             "description": "Not found"
           }
         },
+        "description": "Body: JSON. | Docs: https://docs.ocrolus.com/reference/configure-webhook-secret-account-level",
         "consumes": [
           "application/json"
         ]
