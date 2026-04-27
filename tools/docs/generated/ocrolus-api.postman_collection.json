@@ -141,7 +141,7 @@
           "response": []
         },
         {
-          "name": "book/delete \u2014 Delete a Book",
+          "name": "book/remove \u2014 Delete a Book",
           "request": {
             "method": "POST",
             "header": [
@@ -155,17 +155,17 @@
               }
             ],
             "url": {
-              "raw": "{{BASE_URL}}/v1/book/delete",
+              "raw": "{{BASE_URL}}/v1/book/remove",
               "host": [
                 "{{BASE_URL}}"
               ],
               "path": [
                 "v1",
                 "book",
-                "delete"
+                "remove"
               ]
             },
-            "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string).\n\n**Docs:** https://docs.ocrolus.com/reference/delete-a-book",
+            "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). Note: /v1/book/delete is an alias that also works.\n\n**Docs:** https://docs.ocrolus.com/reference/delete-a-book",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"book_id\": \"71250194\",\n  \"book_uuid\": \"09c52985-2f05-4022-a738-9277cc335c7e\"\n}",

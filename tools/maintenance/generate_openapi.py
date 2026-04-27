@@ -43,10 +43,10 @@ ENDPOINTS = [
      {"name": "string", "book_type": "string"},
      "json", False, "CORRECTED from /v1/book/create. Returns pk (int) and uuid (str). Body: JSON."),
 
-    ("Book Commands", "bookDelete", "book/delete — Delete a Book",
-     "POST", "/v1/book/delete", [],
+    ("Book Commands", "bookRemove", "book/remove — Delete a Book",
+     "POST", "/v1/book/remove", [],
      {"book_id": "integer", "book_uuid": "string"},
-     "json", False, "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string)."),
+     "json", False, "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). Note: /v1/book/delete is an alias that also works."),
 
     ("Book Commands", "bookUpdate", "book/update — Update Book properties",
      "POST", "/v1/book/update", [],
@@ -428,7 +428,7 @@ DOC_LINKS = {
     "oauthToken": "grant-authentication-token",
     # Book Operations
     "bookAdd": "create-a-book",
-    "bookDelete": "delete-a-book",
+    "bookRemove": "delete-a-book",
     "bookUpdate": "update-book",
     "bookInfo": "book-info",
     "booksList": "book-list",

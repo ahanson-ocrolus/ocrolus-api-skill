@@ -1,5 +1,5 @@
 # Ocrolus API - OpenAPI 3.0.3 Specification
-# Generated: 2026-04-24 20:47:19 UTC
+# Generated: 2026-04-27 21:07:29 UTC
 
 openapi: 3.0.3
 info:
@@ -231,12 +231,12 @@ paths:
                 book_type:
                   type: string
                   example: DEFAULT
-  /v1/book/delete:
+  /v1/book/remove:
     post:
       tags:
         - Book Commands
-      operationId: bookDelete
-      summary: book/delete — Delete a Book
+      operationId: bookRemove
+      summary: book/remove — Delete a Book
       responses:
         200:
           description: Success
@@ -262,7 +262,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-      description: "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). | Docs: https://docs.ocrolus.com/reference/delete-a-book"
+      description: "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). Note: /v1/book/delete is an alias that also works. | Docs: https://docs.ocrolus.com/reference/delete-a-book"
       requestBody:
         required: true
         content:

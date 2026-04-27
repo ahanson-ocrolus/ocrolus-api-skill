@@ -168,13 +168,13 @@
         ]
       }
     },
-    "/v1/book/delete": {
+    "/v1/book/remove": {
       "post": {
         "tags": [
           "Book Commands"
         ],
-        "operationId": "bookDelete",
-        "summary": "book/delete \u2014 Delete a Book",
+        "operationId": "bookRemove",
+        "summary": "book/remove \u2014 Delete a Book",
         "produces": [
           "application/json"
         ],
@@ -210,7 +210,7 @@
             "description": "Not found"
           }
         },
-        "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). | Docs: https://docs.ocrolus.com/reference/delete-a-book",
+        "description": "Body: JSON. Exactly one of book_id (integer) or book_uuid (UUID string). Note: /v1/book/delete is an alias that also works. | Docs: https://docs.ocrolus.com/reference/delete-a-book",
         "consumes": [
           "application/json"
         ]

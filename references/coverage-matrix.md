@@ -30,7 +30,7 @@
 | Endpoint | Path | Input | SDK Method | Status |
 |----------|------|-------|------------|--------|
 | `book/add` | `POST /v1/book/add` | Body (JSON): `name`, `book_type` | `create_book()` | :hammer_and_wrench: CORRECTED from `/v1/book/create` |
-| `book/delete` | `POST /v1/book/delete` | Body (JSON): `book_id` OR `book_uuid` | `delete_book()` | :white_check_mark: |
+| `book/remove` | `POST /v1/book/remove` | Body (JSON): `book_id` OR `book_uuid` | `delete_book()` | :white_check_mark: `/v1/book/delete` is an alias |
 | `book/update` | `POST /v1/book/update` | Body (JSON): `pk` OR `book_uuid`, `name` | `update_book()` | :white_check_mark: |
 
 ## Book Queries
@@ -216,7 +216,7 @@ All v1 endpoints support both path-param and query-param styles:
 | Path-Param Style (Our SDK) | Query-Param Style (Official Spec) | Status |
 |----|---|---|
 | `GET /v1/book/{pk}` | `GET /v1/book/info?pk=X` | :white_check_mark: Both work |
-| `POST /v1/book/delete` | `POST /v1/book/remove` | :white_check_mark: Both work |
+| `POST /v1/book/remove` (Official) | `POST /v1/book/delete` (alias) | :white_check_mark: Both work |
 | `POST /v1/document/{uuid}/cancel` | `POST /v1/document/cancel?doc_uuid=X` | :white_check_mark: Both work |
 | `POST /v1/document/{uuid}/delete` | `POST /v1/document/remove?doc_uuid=X` | :white_check_mark: Both work |
 | `POST /v1/document/{uuid}/upgrade` | `POST /v1/document/upgrade?doc_uuid=X` | :white_check_mark: Both work |

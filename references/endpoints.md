@@ -33,7 +33,7 @@ Write operations on Books: create, update, delete.
 | Endpoint | Method | Path | Input | Status |
 |----------|--------|------|-------|--------|
 | `book/add` | POST | `/v1/book/add` | **Body (JSON):** `name`, `book_type` | CORRECTED — `/v1/book/create` returns 404 |
-| `book/delete` | POST | `/v1/book/delete` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) | CONFIRMED |
+| `book/remove` | POST | `/v1/book/remove` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) | CONFIRMED — `/v1/book/delete` is an alias |
 | `book/update` | POST | `/v1/book/update` | **Body (JSON):** `pk` (integer) OR `book_uuid` (UUID), + `name` | CONFIRMED |
 
 **Important corrections:**
