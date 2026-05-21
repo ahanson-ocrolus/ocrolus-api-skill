@@ -1,18 +1,20 @@
 # Ocrolus API — Endpoint Inventory
 
-A capability-organized inventory of Ocrolus API endpoints, grouped to mirror the structure at <https://docs.ocrolus.com/reference>. Endpoint names follow the actual URL path segment (e.g., `book/add`) rather than the human-readable name on docs.ocrolus.com.
+A capability-organized inventory of Ocrolus API endpoints, mirroring the public reference at <https://docs.ocrolus.com/reference>. Sections, names, and paths match the docs site (which is what customers integrate against).
 
-For interactive exploration, see the [Ocrolus Postman collection](https://docs.ocrolus.com/reference).
+For interactive exploration, see the Ocrolus Postman collection linked from <https://docs.ocrolus.com/reference>.
+
+> **About this inventory.** Paths and parameter names below are aligned to the public docs page. Where the live API also accepts an undocumented alias (e.g. legacy path-style routes), the alias is called out so you don't get surprised in older code, but new code should always use the documented path.
 
 ---
 
 ## Authentication
 
-| Endpoint | Method | Path | Input | Notes |
-|----------|--------|------|-------|-------|
-| `oauth/token` | POST | `https://auth.ocrolus.com/oauth/token` | **Body (form-encoded):** `grant_type`, `client_id`, `client_secret` | OAuth 2.0 client_credentials grant; returns JWT; 24h expiry |
+| Endpoint | Method | Path | Input |
+|----------|--------|------|-------|
+| Grant authentication token | POST | `https://auth.ocrolus.com/oauth/token` | **Body (form-encoded):** `grant_type=client_credentials`, `client_id`, `client_secret` |
 
-The auth body must be form-encoded (`application/x-www-form-urlencoded`). Do not include an `audience` parameter — including it returns 403.
+The body **must** be form-encoded (`application/x-www-form-urlencoded`). JSON bodies and the `audience` parameter return `403 unauthorized_client`.
 
 **Response:** `{ "access_token": "...", "token_type": "Bearer", "expires_in": 86400 }`
 **All subsequent requests:** `Authorization: Bearer <access_token>`
@@ -21,51 +23,65 @@ The auth body must be form-encoded (`application/x-www-form-urlencoded`). Do not
 
 ## Books
 
-Create, update, delete, list, and look up books.
+### Book Commands
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/add` | POST | `/v1/book/add` | **Body (JSON):** `name`, `book_type` |
-| `book/remove` | POST | `/v1/book/remove` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) |
-| `book/update` | POST | `/v1/book/update` | **Body (JSON):** `pk` (integer) OR `book_uuid` (UUID), `name` |
-| `book/{pk}` | GET | `/v1/book/{pk}` | **Path:** `pk` (integer) |
-| `books` | GET | `/v1/books` | **Query (optional):** `page`, `per_page` |
-| `book/status` | GET | `/v1/book/status?book_pk={pk}` | **Query:** `book_pk` (integer). Path-style `/v1/book/{pk}/status` also works. |
-| `book/loan/{loan_id}` | GET | `/v1/book/loan/{loan_id}` | **Path:** `loan_id` (string) |
-| `book/{pk}/loan` | GET | `/v1/book/{pk}/loan` | **Path:** `pk` (integer) |
+| Create Book | POST | `/v1/book/add` | **Body (JSON):** `name`, `book_type`, `book_class`, `is_public`, `xid` |
+| Update Book | POST | `/v1/book/update` | **Body (JSON):** `pk` OR `book_uuid`, `name`, `book_type`, `book_class`, `is_public`, `xid` |
+| Delete Book | POST | `/v1/book/remove` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) |
 
-`/v1/book/add` returns both `pk` and `uuid`. Persist both — `pk` is used by v1 endpoints, `uuid` by v2 endpoints. Field naming varies across write endpoints: `book/remove` accepts `book_id`, `book/update` accepts `pk`.
+### Book Queries
+
+| Endpoint | Method | Path | Input |
+|----------|--------|------|-------|
+| Book information | GET | `/v1/book/info` | **Query:** `pk` OR `book_uuid` |
+| Book status | GET | `/v1/book/status` | **Query:** `pk` OR `book_uuid` |
+| Book list | GET | `/v1/books` | **Query (optional):** `limit`, `offset`, `order`, `order_by`, `name`, `search`, `xid` |
+| Loan details from Book | GET | `/v2/los-connect/book/{book_uuid}/loans` | **Path:** `book_uuid` |
+| Book from loan | GET | `/v2/los-connect/encompass/book` | **Query:** `loan_id` and/or `loan_number` |
+
+`/v1/book/add` returns both `pk` (integer) and `uuid` (UUID). Persist both — v1 endpoints typically take `pk`, v2 endpoints take `book_uuid`.
+
+**Undocumented aliases the live API still answers (don't rely on these in new code):**
+- `GET /v1/book/{pk}` (use `/v1/book/info?pk=` instead)
+- `GET /v1/book/{pk}/status` (use `/v1/book/status?pk=` instead)
+- `GET /v1/book/{pk}/loan` (use `/v2/los-connect/book/{book_uuid}/loans` instead)
+- `GET /v1/book/loan/{loan_id}` (use `/v2/los-connect/encompass/book?loan_id=` instead)
 
 ---
 
-## Document Upload
-
-Upload documents, pay stubs, images, and Plaid data to a book.
+## File Uploads
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/upload` | POST | `/v1/book/upload` | **Form (multipart):** `pk` (integer) OR `book_uuid` (UUID), `upload` (file), `form_type` (optional), `doc_name` (optional) |
-| `book/upload/mixed` | POST | `/v1/book/upload/mixed` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file) |
-| `book/upload/paystub` | POST | `/v1/book/upload/paystub` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file) |
-| `book/upload/image` | POST | `/v1/book/upload/image` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file), `image_group` (string) |
-| `book/finalize-image-group` | POST | `/v1/book/finalize-image-group` | **Body (JSON):** `pk` OR `book_uuid`, `image_group` (string) |
-| `book/upload/plaid` | POST | `/v1/book/upload/plaid` | **Body (JSON):** `pk` OR `book_uuid` |
-| `book/import/plaid/asset` | POST | `/v1/book/import/plaid/asset` | **Body (JSON):** `audit_copy_token` (string). Production only. |
+| Upload PDF to Book | POST | `/v1/book/upload` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file), `form_type` (optional), `doc_name` (optional) |
+| Upload Mixed Document PDF to Book | POST | `/v1/book/upload/mixed` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file), `doc_name` (optional) |
+| Upload Image to Book | POST | `/v1/book/upload/image` | **Form (multipart):** `pk` OR `book_uuid`, `upload` (file), `return_image_pk` (optional) |
+| Finalize Image Group | POST | `/v1/book/upload/image/done` | **Body (JSON):** `pk` OR `book_uuid`, `form_type` |
+| Upload aggregator JSON to Book | POST | `/v1/book/upload/json` | **Form (multipart):** `pk` OR `uuid`, `upload` (file), `accounts`, `transactions`, `customers`, `institutions`, `doc_name`; **Query (optional):** `upload_intent`, `aggregate_source` |
+| Upload Pay stub PDF to Book | POST | `/v2/book/{book_uuid}/document/paystub` | **Path:** `book_uuid`; **Form (multipart):** `upload` (file) |
+| Import Plaid Asset Report | POST | `/v1/book/import/plaid/asset` | **Body (JSON):** `pk` OR `book_uuid`, `audit_copy_token`, `form_type`, `doc_name`. Production only. |
 
-The form field is `pk` (integer) or `book_uuid` (UUID) — not `book_pk`. Maximum file size: **200 MB**. `form_type` is optional and cannot be used for bank statements.
+The multipart file field is `upload` (the live API also accepts `file`). The book selector field is **`pk`** (integer) or **`book_uuid`** (UUID) — `book_pk` returns `Required pk or book uuid` (status 1103). Maximum file size: **200 MB**.
 
-### Document operations
+---
+
+## File Commands
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `document/cancel` | POST | `/v1/document/{doc_uuid}/cancel` | **Path:** `doc_uuid`; **Body (JSON, optional):** `doc_pk` OR `doc_uuid`, `accept_charges` (boolean) |
-| `document/remove` | POST | `/v1/document/{doc_uuid}/delete` | **Path:** `doc_uuid`; **Body (JSON):** `doc_id` (integer) OR `doc_uuid` |
-| `document/download` | GET | `/v1/document/{doc_uuid}/download` | **Path:** `doc_uuid`. Returns binary. |
-| `document/upgrade` | POST | `/v1/document/{doc_uuid}/upgrade` | **Path:** `doc_uuid`; **Body (JSON):** `doc_pk` OR `doc_uuid`, `upgrade_type` (string) |
-| `document/mixed/upgrade` | POST | `/v1/document/mixed/upgrade` | **Body (JSON):** `mixed_doc_pk` OR `mixed_doc_uuid`, `upgrade_type` |
-| `document/mixed/status` | GET | `/v1/document/mixed/status` | **Query:** one of `pk` (integer), `doc_uuid`, or `mixed_doc_uuid` |
+| Cancel document verification | POST | `/v1/document/cancel` | **Body (JSON):** `doc_pk` OR `doc_uuid`, `accept_charges` (boolean) |
+| Delete document | POST | `/v1/document/remove` | **Body (JSON):** `doc_id` OR `doc_uuid` |
+| Download document | GET | `/v2/document/download` | **Query:** `doc_uuid` |
+| Upgrade a document | POST | `/v1/document/upgrade` | **Body (JSON):** `doc_pk` OR `doc_uuid`, `upgrade_type` |
+| Upgrade a mixed document | POST | `/v1/document/mixed/upgrade` | **Body (JSON):** `mixed_doc_pk` OR `mixed_doc_uuid`, `upgrade_type` |
 
-Field naming notes: `document/cancel` and `document/upgrade` use `doc_pk`; `document/remove` uses `doc_id`; `document/mixed/upgrade` uses `mixed_doc_pk`.
+## File Queries
+
+| Endpoint | Method | Path | Input |
+|----------|--------|------|-------|
+| Retrieve Mixed Document status | GET | `/v1/document/mixed/status` | **Query:** one of `pk`, `doc_uuid`, or `mixed_doc_uuid` |
 
 ---
 
@@ -75,139 +91,159 @@ Identify document types with confidence scores. Uses `book_uuid`.
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/{book_uuid}/classification-summary` | GET | `/v2/book/{book_uuid}/classification-summary` | **Path:** `book_uuid` |
-| `mixed-document/{mixed_doc_uuid}/classification-summary` | GET | `/v2/mixed-document/{mixed_doc_uuid}/classification-summary` | **Path:** `mixed_doc_uuid` |
-| `index/mixed-doc/{mixed_doc_uuid}/summary` | GET | `/v2/index/mixed-doc/{mixed_doc_uuid}/summary` | **Path:** `mixed_doc_uuid` |
+| Book classification summary | GET | `/v2/book/{book_uuid}/classification-summary` | **Path:** `book_uuid`; **Query (optional):** `process_unknowns` |
+| Mixed Doc classification summary | GET | `/v2/mixed-document/{mixed_doc_uuid}/classification-summary` | **Path:** `mixed_doc_uuid`; **Query (optional):** `process_unknowns` |
+| Grouped mixed doc classification summary | GET | `/v2/index/mixed-doc/{mixed_doc_uuid}/summary` | **Path:** `mixed_doc_uuid`; **Query (optional):** `split_unknowns` |
 
 - Identifies 300+ document types with confidence scores (0–1).
 - Uniqueness Values (UV): extracts key fields during classification (e.g., employer + employee name from pay stubs).
-- The grouped summary organizes forms into logical groups.
 - Webhook events: `document.classification_succeeded`, `document.classification_failed`.
 
 ---
 
 ## Capture
 
-Extract structured data from documents (forms, pay stubs, transactions). Uses `pk`.
+Extract structured data from documents (forms, pay stubs, transactions). Uses query parameters that accept either `pk`/`book_pk` (integer) **or** `book_uuid` (UUID).
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/{pk}/forms` | GET | `/v1/book/{pk}/forms` | **Path:** `pk` (integer) |
-| `book/{pk}/paystubs` | GET | `/v1/book/{pk}/paystubs` | **Path:** `pk` (integer) |
-| `document/{doc_uuid}/forms` | GET | `/v1/document/{doc_uuid}/forms` | **Path:** `doc_uuid` |
-| `document/{doc_uuid}/paystubs` | GET | `/v1/document/{doc_uuid}/paystubs` | **Path:** `doc_uuid` |
-| `form/{form_uuid}/fields` | GET | `/v1/form/{form_uuid}/fields` | **Path:** `form_uuid` |
-| `paystub/{paystub_uuid}` | GET | `/v1/paystub/{paystub_uuid}` | **Path:** `paystub_uuid` |
-| `book/{pk}/transactions` | GET | `/v1/book/{pk}/transactions` | **Path:** `pk`; **Query (optional):** `uploaded_doc_pk`, `uploaded_doc_uuid`, `only_tagged`, `distinct_fields` |
+| Book form data | GET | `/v1/book/forms` | **Query:** `pk` OR `book_uuid` |
+| Doc form data | GET | `/v1/document/forms/fields` | **Query:** `pk` OR `doc_uuid`; optional `include_all`, `include_bboxes` |
+| Form data | GET | `/v1/form` | **Query:** `uuid` OR `pk` |
+| Book pay stub data | GET | `/v2/book/{book_uuid}/paystub` | **Path:** `book_uuid` |
+| Doc pay stub data | GET | `/v2/document/{doc_uuid}/paystub` | **Path:** `doc_uuid`; **Query (optional):** `include_page_doc_info` |
+| Pay stub data | GET | `/v2/paystub/{paystub_uuid}` | **Path:** `paystub_uuid` |
+| Transactions | GET | `/v1/transaction` | **Query:** `book_pk` OR `book_uuid`; optional `uploaded_doc_pk`, `uploaded_doc_uuid`, `only_tagged`, `distinct_fields`, `include_page_info` |
 
 - Per-field confidence scores (0 = no confidence, 1 = very high).
-- Transactions are also available via query param style: `/v1/transaction?book_pk=X`.
-- Scope transactions to a single document with `uploaded_doc_pk` or `uploaded_doc_uuid`.
+- Pay stub endpoints moved to v2; the v1 forms remain document-agnostic.
+
+**Undocumented aliases the live API still answers (don't rely on these in new code):**
+- `GET /v1/book/{pk}/forms` (use `/v1/book/forms?pk=` instead)
+- `GET /v1/book/{pk}/paystubs` (use `/v2/book/{book_uuid}/paystub` instead)
+- `GET /v1/document/{doc_uuid}/forms` (use `/v1/document/forms/fields?doc_uuid=` instead)
+- `GET /v1/document/{doc_uuid}/paystubs` (use `/v2/document/{doc_uuid}/paystub` instead)
+- `GET /v1/form/{form_uuid}/fields` (use `/v1/form?uuid=` instead)
+- `GET /v1/paystub/{paystub_uuid}` (use `/v2/paystub/{paystub_uuid}` instead)
+- `GET /v1/book/{pk}/transactions` (use `/v1/transaction?book_pk=` instead)
 
 ---
 
 ## Detect
 
-Fraud detection signals, authenticity scores, and reason codes. Uses `book_uuid` / `doc_uuid`.
+Fraud detection signals, authenticity scores, and reason codes. Uses `book_uuid` / `uploaded_doc_uuid`.
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `detect/book/{book_uuid}/signals` | GET | `/v2/detect/book/{book_uuid}/signals` | **Path:** `book_uuid` |
-| `detect/document/{doc_uuid}/signals` | GET | `/v2/detect/document/{doc_uuid}/signals` | **Path:** `doc_uuid` |
-| `detect/visualization/{visualization_uuid}` | GET | `/v2/detect/visualization/{visualization_uuid}` | **Path:** `visualization_uuid`. Returns a binary image. |
+| Book-level Fraud Signals | GET | `/v2/detect/book/{book_uuid}/signals` | **Path:** `book_uuid`; **Query (optional):** `exclude_dashboard_url` |
+| Document-Level Fraud Signals | GET | `/v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals` | **Path:** `uploaded_doc_uuid`; **Query (optional):** `exclude_dashboard_url` |
+| Signal visualization | GET | `/v2/detect/visualization/{visualization_uuid}` | **Path:** `visualization_uuid`; **Query (optional):** `size`. Returns a binary image. |
+| Suspicious Activity Flags (Legacy) | GET | `/v1/book/{book_uuid}/suspicious-activity-flags` | **Path:** `book_uuid` |
 
-Use the v2 `/v2/detect/...` endpoints for current fraud detection. See `references/detect.md` for the authenticity score scale, reason code taxonomy, and signal interpretation.
+The document-level endpoint is `/v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals` — note `uploaded_doc`, not `document`. See `references/detect.md` for the authenticity score scale, reason code taxonomy, and signal interpretation.
 
 ---
 
-## Analyze (Cash Flow)
-
-Cash flow analytics, enriched transactions, and risk scoring. Uses `book_uuid`.
+## Cash Flow Analytics
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/{book_uuid}/summary` | GET | `/v2/book/{book_uuid}/summary` | **Path:** `book_uuid` |
-| `book/{book_uuid}/cash_flow_features` | GET | `/v2/book/{book_uuid}/cash_flow_features` | **Path:** `book_uuid`; **Query (optional):** `min_days_to_include` (integer, default 0) |
-| `book/{book_uuid}/enriched_txns` | GET | `/v2/book/{book_uuid}/enriched_txns` | **Path:** `book_uuid` |
-| `book/{book_uuid}/cash_flow_risk_score` | GET | `/v2/book/{book_uuid}/cash_flow_risk_score` | **Path:** `book_uuid` |
-| `book/{book_uuid}/benchmarking` | GET | `/v2/book/{book_uuid}/benchmarking` | **Path:** `book_uuid`. Beta. |
-| `book/{book_uuid}/lender_analytics/xlsx` | GET | `/v2/book/{book_uuid}/lender_analytics/xlsx` | **Path:** `book_uuid`. Returns `.xlsx` binary. |
+| Book summary | GET | `/v2/book/{book_uuid}/summary` | **Path:** `book_uuid`; **Query (optional):** `scope`, `exclude_months`, `exclude_bank_account_pks` |
+| Cash flow features | GET | `/v2/book/{book_uuid}/cash_flow_features` | **Path:** `book_uuid` |
+| Enriched transactions | GET | `/v2/book/{book_uuid}/enriched_txns` | **Path:** `book_uuid`; **Query (optional):** `offset`, `limit`, `include_pending_plaid_transactions` |
+| Risk score | GET | `/v2/book/{book_uuid}/cash_flow_risk_score` | **Path:** `book_uuid` |
+| SMB analytics (Excel) | GET | `/v2/book/{book_uuid}/lender_analytics/xlsx` | **Path:** `book_uuid`. Returns `.xlsx` binary. |
+| Bank statement income calculator | GET | `/v2/book/{book_uuid}/income/bank-statement-v2` | **Path:** `book_uuid` |
+| Bank statement income calculator (Excel) | GET | `/v2/book/{book_uuid}/income/bank-statement-v2/xlsx` | **Path:** `book_uuid`. Returns `.xlsx` binary. |
 
-`cash_flow_features` accepts `min_days_to_include` (default 0); set to 32 to limit output to complete months only.
+> The Excel export for BSIC is its own endpoint (`.../xlsx`) — not an `Accept` header on the JSON endpoint.
 
 ---
 
 ## Income
 
-Income calculations, BSIC, and self-employed income. Uses `book_uuid`.
-
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/{book_uuid}/income-calculations` | GET | `/v2/book/{book_uuid}/income-calculations` | **Path:** `book_uuid`; **Query (optional):** `guideline` (`FANNIE_MAE`, `FREDDIE_MAC`, `FHA`, `VA`, `USDA`) |
-| `book/{book_uuid}/income-summary` | GET | `/v2/book/{book_uuid}/income-summary` | **Path:** `book_uuid` |
-| `book/{book_uuid}/income-entity` | POST | `/v2/book/{book_uuid}/income-entity` | **Path:** `book_uuid`; **Body (JSON):** config object |
-| `book/{book_uuid}/income-guideline` | PUT | `/v2/book/{book_uuid}/income-guideline` | **Path:** `book_uuid`; **Body (JSON):** guideline object |
-| `book/{book_uuid}/self-employed-income` | POST | `/v2/book/{book_uuid}/self-employed-income` | **Path:** `book_uuid`; **Body (JSON):** params object |
-| `book/{book_uuid}/bsic` | GET | `/v2/book/{book_uuid}/bsic` | **Path:** `book_uuid` |
-| `book/{book_uuid}/bsic` (Excel) | GET | `/v2/book/{book_uuid}/bsic` | **Path:** `book_uuid`; **Header:** `Accept: application/xlsx` |
+| Income calculations | GET | `/v2/book/{book_uuid}/income-calculations` | **Path:** `book_uuid`; **Query (optional):** `guideline` (`FANNIE_MAE`, `FREDDIE_MAC`, `FHA`, `VA`, `USDA`) |
+| Income summary | GET | `/v2/book/{book_uuid}/income/summary` | **Path:** `book_uuid`; **Query (optional):** `guideline` |
+| Configure income entity | POST | `/v2/book/{book_uuid}/income/entity_config` | **Path:** `book_uuid`; **Body (JSON):** `entity_details`, `borrower_details`, `xid`, `employment_start_date`, `income_type` |
+| Save income guideline | PUT | `/v2/book/{book_uuid}/income-guideline` | **Path:** `book_uuid`; **Query (optional):** `guideline` |
+| Calculate Fannie Mae self-employed income | POST | `/v2/book/{book_uuid}/income/self-employed/calculate` | **Path:** `book_uuid`; **Body (JSON):** `borrower_uuid`, `business_uuid`, `income_guideline`, `meta_info` |
+
+> Path naming is inconsistent on the public docs: most income endpoints sit under `/income/...` (slash) but `income-calculations` and `income-guideline` use a hyphen. Match the docs exactly — the live API doesn't accept the wrong shape.
 
 ---
 
-## Transaction Tags (Beta)
+## Business History
+
+Business-level views aggregated across books for a known business identifier.
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `analytics/tags` (create) | POST | `/v2/analytics/tags` | **Body (JSON):** `name` (string) |
-| `analytics/tags/{tag_uuid}` | GET | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid` |
-| `analytics/tags/{tag_uuid}` (modify) | PUT | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid`; **Body (JSON):** `name` |
-| `analytics/tags/{tag_uuid}` (delete) | DELETE | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid` |
-| `analytics/tags` (list) | GET | `/v2/analytics/tags` | **Query (optional):** `is_system_tag` (boolean) |
-| `analytics/revenue-deduction-tags` | GET | `/v2/analytics/revenue-deduction-tags` | None |
-| `analytics/revenue-deduction-tags` (update) | PUT | `/v2/analytics/revenue-deduction-tags` | **Body (JSON):** `tag_names` (array) |
-| `analytics/book/{book_uuid}/transactions` | PUT | `/v2/analytics/book/{book_uuid}/transactions` | **Path:** `book_uuid`; **Body (JSON):** `txn_pk`, `tag_uuids` |
+| Business identifier | GET | `/v2/book/{book_uuid}/business` | **Path:** `book_uuid` |
+| Business overview | GET | `/v1/businesses/{business_id}` | **Path:** `business_id` |
+| Business summary | GET | `/v1/businesses/{business_id}/summary` | **Path:** `business_id`; **Query (optional):** `begin_date`, `end_date`, `updated_since` |
+| Business transactions | GET | `/v1/businesses/{business_id}/transactions` | **Path:** `business_id`; **Query (optional):** `offset`, `limit`, `start_date`, `end_date`, `updated_since` |
+
+---
+
+## Tag Management
+
+| Endpoint | Method | Path | Input |
+|----------|--------|------|-------|
+| Create tag | POST | `/v2/analytics/tags` | **Body (JSON):** `name`, `description`, `color`, `customization` |
+| Retrieve all tags | GET | `/v2/analytics/tags` | **Query (optional):** `tag_type` |
+| Retrieve a tag | GET | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid` |
+| Modify tag | PUT | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid`; **Body (JSON):** `name`, `description`, `color`, `customization` |
+| Delete tag | DELETE | `/v2/analytics/tags/{tag_uuid}` | **Path:** `tag_uuid` |
+| Retrieve revenue deduction tags | GET | `/v2/analytics/revenue-deduction-tags` | None |
+| Update revenue deduction tag | PUT | `/v2/analytics/revenue-deduction-tags` | **Body (JSON):** `revenue_deduction_tags` (array of strings) |
+| Override transaction tag | PUT | `/v2/analytics/book/{book_uuid}/transactions` | **Path:** `book_uuid`; **Body (JSON):** `txns` (array) |
 
 ---
 
 ## Encore (Book Copy)
 
-Organization-to-organization book sharing.
-
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `book/copy-jobs` (create) | POST | `/v1/book/copy-jobs` | **Body (JSON):** `jobs` (array, max 50) |
-| `book/copy-jobs` (list) | GET | `/v1/book/copy-jobs` | **Query (optional):** `direction` (`outbound` or `inbound`) |
-| `book/copy-jobs/{job_id}/accept` | POST | `/v1/book/copy-jobs/{job_id}/accept` | **Path:** `job_id`; **Body (JSON):** `name` |
-| `book/copy-jobs/{job_id}/reject` | POST | `/v1/book/copy-jobs/{job_id}/reject` | **Path:** `job_id` |
-| `book/copy-jobs/run-kickouts` | POST | `/v1/book/copy-jobs/run-kickouts` | None |
-| `settings/book-copy` | GET | `/v1/settings/book-copy` | None |
+| Create Book copy jobs | POST | `/v1/book/copy-jobs` | **Body (JSON):** array of copy requests (max 50) |
+| List Book copy jobs | GET | `/v1/book/copy-jobs` | **Query (optional):** `job_type`, `org_uuid`, `offset`, `limit` |
+| Accept Book copy jobs | POST | `/v1/book/copy-jobs/{job_id}/accept` | **Path:** `job_id`; **Body (JSON):** `book_name` |
+| Reject Book copy jobs | POST | `/v1/book/copy-jobs/{job_id}/reject` | **Path:** `job_id` |
+| Run automated cash flow kick-outs | POST | `/v1/book/copy-jobs/run-kickouts` | None |
+| Retrieve Book copy settings | GET | `/v1/settings/book-copy` | None |
 
 ---
 
 ## Webhooks
 
-### Organization-level (recommended)
+Webhook subscriptions and event delivery. Use **Org-level** webhooks for new integrations; the legacy account-level set still works but is superseded.
+
+### Org Level Webhooks
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `account/settings/webhook` | POST | `/v1/account/settings/webhook` | **Body (JSON):** `url`, `events` (array) |
-| `account/settings/webhooks` | GET | `/v1/account/settings/webhooks` | None |
-| `account/settings/webhooks/{webhook_id}` | GET | `/v1/account/settings/webhooks/{webhook_id}` | **Path:** `webhook_id` |
-| `account/settings/webhooks/{webhook_id}` (update) | PUT | `/v1/account/settings/webhooks/{webhook_id}` | **Path:** `webhook_id`; **Body (JSON):** `url`, `events` |
-| `account/settings/webhooks/{webhook_id}` (delete) | DELETE | `/v1/account/settings/webhooks/{webhook_id}` | **Path:** `webhook_id` |
-| `account/settings/webhooks/events` | GET | `/v1/account/settings/webhooks/events` | None |
-| `account/settings/webhooks/{webhook_id}/test` | POST | `/v1/account/settings/webhooks/{webhook_id}/test` | **Path:** `webhook_id` |
-| `account/settings/webhooks/secret` | POST | `/v1/account/settings/webhooks/secret` | **Body (JSON):** `secret` (string, 16–128 chars) |
+| Add webhook | POST | `/v1/account/settings/webhook` | **Body (JSON):** `url`, `events` (array of event names) |
+| List webhooks | GET | `/v1/account/settings/webhooks` | None |
+| Retrieve webhook | GET | `/v1/account/settings/webhook/{webhook_uuid}` | **Path:** `webhook_uuid` |
+| Update webhook | POST | `/v1/account/settings/webhook/{webhook_uuid}/update` | **Path:** `webhook_uuid`; **Body (JSON):** `url`, `events` |
+| Delete webhook | DELETE | `/v1/account/settings/webhook/{webhook_uuid}/delete` | **Path:** `webhook_uuid` |
+| List webhook events | GET | `/v1/account/settings/webhook/{webhook_uuid}/events` | **Path:** `webhook_uuid` |
+| Test webhook | POST | `/v1/account/settings/webhook/{webhook_uuid}/test` | **Path:** `webhook_uuid`; **Body (JSON):** `event_uuid` |
+| Configure webhook secret | POST | `/v1/account/settings/webhook/{webhook_uuid}/rotate-secret` | **Path:** `webhook_uuid`; **Body (JSON):** `secret_key` |
 
-### Account-level
+> Update is **POST** to `.../update` and delete is **DELETE** to `.../delete` — both use the action-suffix style, not a method on the resource URL. Path segment is `webhook` (singular) for the per-webhook routes; `webhooks` (plural) only for the list endpoint.
+
+### Account-level Webhooks (legacy)
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| `webhook/configure` | POST | `/v1/webhook/configure` | **Body (JSON):** `url`, `events` (array) |
-| `webhook/configuration` | GET | `/v1/webhook/configuration` | None |
-| `webhook/test` | POST | `/v1/webhook/test` | None |
-| `webhook/secret` | POST | `/v1/webhook/secret` | **Body (JSON):** `secret` (string) |
+| Configure webhook | POST | `/v1/account/settings/update/webhook_endpoint` | **Body (JSON):** `webhook_endpoint`, `event` (array of `WebhookEventType`) |
+| Get webhook configuration | GET | `/v1/account/settings/webhook_details` | None |
+| Test webhook | GET | `/v1/account/settings/test_webhook_endpoint` | None |
+| Configure webhook secret | POST | `/v1/account/settings/webhook/rotate-secret` | **Body (JSON):** `secret_key` |
 
-Only one webhook type can be active per tenant — organization-level or account-level, not both. See `references/webhooks.md` for event names, payloads, and signature verification.
+Only one model can be active per tenant — Org-level or account-level, not both. See `references/webhooks.md` for event names, payloads, and signature verification.
 
 ---
 
@@ -220,7 +256,6 @@ Only one webhook type can be active per tenant — organization-level or account
 | **Query (optional):** | Optional URL query parameter |
 | **Body (JSON):** | Request body sent as `application/json` |
 | **Body (form-encoded):** | Request body sent as `application/x-www-form-urlencoded` |
-| **Body (raw):** | Request body sent as raw binary with appropriate Content-Type |
 | **Form (multipart):** | Request body sent as `multipart/form-data` (file uploads) |
 | **Header:** | Custom request header |
 | None | No parameters required |
