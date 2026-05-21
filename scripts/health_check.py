@@ -3,18 +3,19 @@
 Ocrolus API Health Check
 ========================
 
-Comprehensive health check for all 75 Ocrolus API endpoints.
-Generates console, JSON, and HTML dashboard reports.
+Comprehensive health check for every Ocrolus API endpoint listed on the
+public reference at docs.ocrolus.com/reference. Generates console, JSON,
+and HTML dashboard reports.
 
 Usage:
     export OCROLUS_CLIENT_ID="your_id"
     export OCROLUS_CLIENT_SECRET="your_secret"
 
-    python tools/health_check.py
-    python tools/health_check.py --output-dir ./reports
-    python tools/health_check.py --webhooks --write-paths
-    python tools/health_check.py --repeat 5 --interval 120
-    python tools/health_check.py --html-only
+    python scripts/health_check.py
+    python scripts/health_check.py --output-dir ./reports
+    python scripts/health_check.py --webhooks --write-paths
+    python scripts/health_check.py --repeat 5 --interval 120
+    python scripts/health_check.py --html-only
 """
 
 import argparse
@@ -33,105 +34,129 @@ AUTH_URL = "https://auth.ocrolus.com/oauth/token"
 # ---------------------------------------------------------------------------
 # Endpoint definitions: (name, method, path, category, params_or_None)
 # ---------------------------------------------------------------------------
+# Reusable placeholders so the route is exercised even without a real book/doc.
+_BOOK_UUID = "00000000-0000-0000-0000-000000000000"
+_DOC_UUID = "00000000-0000-0000-0000-000000000000"
+_MIXED_UUID = "00000000-0000-0000-0000-000000000000"
+_TAG_UUID = "00000000-0000-0000-0000-000000000000"
+_WEBHOOK_UUID = "00000000-0000-0000-0000-000000000000"
+_PAYSTUB_UUID = "00000000-0000-0000-0000-000000000000"
+_FORM_UUID = "00000000-0000-0000-0000-000000000000"
+_VIS_UUID = "00000000-0000-0000-0000-000000000000"
+_JOB_ID = "00000000-0000-0000-0000-000000000000"
+_BUSINESS_ID = "1"
+
+# Endpoint inventory aligned to docs.ocrolus.com/reference (see DOCS_ALIGNMENT.md).
 ENDPOINTS = [
     # Authentication
     ("Grant Token", "POST", AUTH_URL, "Authentication", None),
 
-    # Book Operations
-    ("Create Book", "POST", "/v1/book/create", "Book Operations", None),
-    ("Delete Book", "POST", "/v1/book/delete", "Book Operations", None),
-    ("Update Book", "POST", "/v1/book/update", "Book Operations", None),
-    ("Get Book Info", "GET", "/v1/book/1", "Book Operations", None),
-    ("List Books", "GET", "/v1/books", "Book Operations", None),
-    ("Book Status (query)", "GET", "/v1/book/status", "Book Operations", {"book_pk": "1"}),
-    ("Book from Loan", "GET", "/v1/book/loan/test", "Book Operations", None),
-    ("Loan from Book", "GET", "/v1/book/1/loan", "Book Operations", None),
+    # Book Commands
+    ("Create Book", "POST", "/v1/book/add", "Book Commands", None),
+    ("Update Book", "POST", "/v1/book/update", "Book Commands", None),
+    ("Delete Book", "POST", "/v1/book/remove", "Book Commands", None),
 
-    # Document Upload & Management
-    ("Upload PDF", "POST", "/v1/book/upload", "Document Upload", None),
-    ("Upload Mixed PDF", "POST", "/v1/book/upload/mixed", "Document Upload", None),
-    ("Upload Pay Stub", "POST", "/v1/book/upload/paystub", "Document Upload", None),
-    ("Upload Image", "POST", "/v1/book/upload/image", "Document Upload", None),
-    ("Finalize Image Group", "POST", "/v1/book/finalize-image-group", "Document Upload", None),
-    ("Upload Plaid JSON", "POST", "/v1/book/upload/plaid", "Document Upload", None),
-    ("Import Plaid Asset", "POST", "/v1/book/import/plaid/asset", "Document Upload", None),
-    ("Cancel Document", "POST", "/v1/document/test-uuid/cancel", "Document Upload", None),
-    ("Delete Document", "POST", "/v1/document/test-uuid/delete", "Document Upload", None),
-    ("Download Document", "GET", "/v1/document/test-uuid/download", "Document Upload", None),
-    ("Upgrade Document", "POST", "/v1/document/test-uuid/upgrade", "Document Upload", None),
-    ("Upgrade Mixed Doc", "POST", "/v1/document/mixed/upgrade", "Document Upload", None),
-    ("Mixed Doc Status", "GET", "/v1/document/mixed/status", "Document Upload", None),
+    # Book Queries
+    ("Book Information", "GET", "/v1/book/info", "Book Queries", {"pk": "1"}),
+    ("Book Status", "GET", "/v1/book/status", "Book Queries", {"pk": "1"}),
+    ("Book List", "GET", "/v1/books", "Book Queries", None),
+    ("Loan from Book", "GET", f"/v2/los-connect/book/{_BOOK_UUID}/loans", "Book Queries", None),
+    ("Book from Loan", "GET", "/v2/los-connect/encompass/book", "Book Queries", {"loan_id": "none"}),
 
-    # Classification (v2)
-    ("Book Classification", "GET", "/v2/book/test-uuid/classification-summary", "Classification", None),
-    ("Mixed Doc Classification", "GET", "/v2/mixed-document/test-uuid/classification-summary", "Classification", None),
-    ("Grouped Mixed Doc", "GET", "/v2/index/mixed-doc/test-uuid/summary", "Classification", None),
+    # File Uploads
+    ("Upload PDF", "POST", "/v1/book/upload", "File Uploads", None),
+    ("Upload Mixed PDF", "POST", "/v1/book/upload/mixed", "File Uploads", None),
+    ("Upload Image", "POST", "/v1/book/upload/image", "File Uploads", None),
+    ("Finalize Image Group", "POST", "/v1/book/upload/image/done", "File Uploads", None),
+    ("Upload Aggregator JSON", "POST", "/v1/book/upload/json", "File Uploads", None),
+    ("Upload Pay Stub", "POST", f"/v2/book/{_BOOK_UUID}/document/paystub", "File Uploads", None),
+    ("Import Plaid Asset", "POST", "/v1/book/import/plaid/asset", "File Uploads", None),
 
-    # Data Extraction - Capture
-    ("Book Forms", "GET", "/v1/book/1/forms", "Data Extraction", None),
-    ("Book Paystubs", "GET", "/v1/book/1/paystubs", "Data Extraction", None),
-    ("Document Forms", "GET", "/v1/document/test-uuid/forms", "Data Extraction", None),
-    ("Document Paystubs", "GET", "/v1/document/test-uuid/paystubs", "Data Extraction", None),
-    ("Form Fields", "GET", "/v1/form/test-uuid/fields", "Data Extraction", None),
-    ("Pay Stub Data", "GET", "/v1/paystub/test-uuid", "Data Extraction", None),
-    ("Book Transactions", "GET", "/v1/book/1/transactions", "Data Extraction", None),
+    # File Commands
+    ("Cancel Document", "POST", "/v1/document/cancel", "File Commands", None),
+    ("Delete Document", "POST", "/v1/document/remove", "File Commands", None),
+    ("Download Document", "GET", "/v2/document/download", "File Commands", {"doc_uuid": _DOC_UUID}),
+    ("Upgrade Document", "POST", "/v1/document/upgrade", "File Commands", None),
+    ("Upgrade Mixed Document", "POST", "/v1/document/mixed/upgrade", "File Commands", None),
 
-    # Fraud Detection - Detect (v2)
-    ("Detect Book Signals", "GET", "/v2/detect/book/test-uuid/signals", "Fraud Detection", None),
-    ("Detect Doc Signals", "GET", "/v2/detect/document/test-uuid/signals", "Fraud Detection", None),
-    ("Detect Visualization", "GET", "/v2/detect/visualization/test-uuid", "Fraud Detection", None),
-    ("Suspicious Activity (Legacy)", "GET", "/v1/book/test-uuid/suspicious-activity-flags", "Fraud Detection", None),
+    # File Queries
+    ("Mixed Document Status", "GET", "/v1/document/mixed/status", "File Queries", {"mixed_doc_uuid": _MIXED_UUID}),
 
-    # Cash Flow Analytics (v2)
-    ("Book Summary", "GET", "/v2/book/test-uuid/summary", "Cash Flow Analytics", None),
-    ("Cash Flow Features", "GET", "/v2/book/test-uuid/cash_flow_features", "Cash Flow Analytics", None),
-    ("Enriched Transactions", "GET", "/v2/book/test-uuid/enriched_txns", "Cash Flow Analytics", None),
-    ("Risk Score", "GET", "/v2/book/test-uuid/cash_flow_risk_score", "Cash Flow Analytics", None),
-    ("Benchmarking", "GET", "/v2/book/test-uuid/benchmarking", "Cash Flow Analytics", None),
-    ("Analytics Excel", "GET", "/v2/book/test-uuid/lender_analytics/xlsx", "Cash Flow Analytics", None),
+    # Classify
+    ("Book Classification Summary", "GET", f"/v2/book/{_BOOK_UUID}/classification-summary", "Classify", None),
+    ("Mixed Doc Classification Summary", "GET", f"/v2/mixed-document/{_MIXED_UUID}/classification-summary", "Classify", None),
+    ("Grouped Mixed Doc Summary", "GET", f"/v2/index/mixed-doc/{_MIXED_UUID}/summary", "Classify", None),
 
-    # Income Calculations (v2)
-    ("Income Calculations", "GET", "/v2/book/test-uuid/income-calculations", "Income Calculations", None),
-    ("Income Summary", "GET", "/v2/book/test-uuid/income-summary", "Income Calculations", None),
-    ("Configure Income Entity", "POST", "/v2/book/test-uuid/income-entity", "Income Calculations", None),
-    ("Save Income Guideline", "PUT", "/v2/book/test-uuid/income-guideline", "Income Calculations", None),
-    ("Self-Employed Income", "POST", "/v2/book/test-uuid/self-employed-income", "Income Calculations", None),
-    ("BSIC Results", "GET", "/v2/book/test-uuid/bsic", "Income Calculations", None),
-    ("BSIC Excel", "GET", "/v2/book/test-uuid/bsic", "Income Calculations", None),
+    # Capture
+    ("Book Form Data", "GET", "/v1/book/forms", "Capture", {"pk": "1"}),
+    ("Doc Form Data", "GET", "/v1/document/forms/fields", "Capture", {"doc_uuid": _DOC_UUID}),
+    ("Form Data", "GET", "/v1/form", "Capture", {"uuid": _FORM_UUID}),
+    ("Book Pay Stub Data", "GET", f"/v2/book/{_BOOK_UUID}/paystub", "Capture", None),
+    ("Doc Pay Stub Data", "GET", f"/v2/document/{_DOC_UUID}/paystub", "Capture", None),
+    ("Pay Stub Data", "GET", f"/v2/paystub/{_PAYSTUB_UUID}", "Capture", None),
+    ("Transactions", "GET", "/v1/transaction", "Capture", {"book_pk": "1"}),
 
-    # Tag Management (v2)
+    # Detect
+    ("Book Fraud Signals", "GET", f"/v2/detect/book/{_BOOK_UUID}/signals", "Detect", None),
+    ("Doc Fraud Signals", "GET", f"/v2/detect/uploaded_doc/{_DOC_UUID}/signals", "Detect", None),
+    ("Signal Visualization", "GET", f"/v2/detect/visualization/{_VIS_UUID}", "Detect", None),
+    ("Suspicious Activity (Legacy)", "GET", f"/v1/book/{_BOOK_UUID}/suspicious-activity-flags", "Detect", None),
+
+    # Cash Flow Analytics
+    ("Book Summary", "GET", f"/v2/book/{_BOOK_UUID}/summary", "Cash Flow Analytics", None),
+    ("Cash Flow Features", "GET", f"/v2/book/{_BOOK_UUID}/cash_flow_features", "Cash Flow Analytics", None),
+    ("Enriched Transactions", "GET", f"/v2/book/{_BOOK_UUID}/enriched_txns", "Cash Flow Analytics", None),
+    ("Risk Score", "GET", f"/v2/book/{_BOOK_UUID}/cash_flow_risk_score", "Cash Flow Analytics", None),
+    ("Analytics Excel", "GET", f"/v2/book/{_BOOK_UUID}/lender_analytics/xlsx", "Cash Flow Analytics", None),
+    ("BSIC (JSON)", "GET", f"/v2/book/{_BOOK_UUID}/income/bank-statement-v2", "Cash Flow Analytics", None),
+    ("BSIC (Excel)", "GET", f"/v2/book/{_BOOK_UUID}/income/bank-statement-v2/xlsx", "Cash Flow Analytics", None),
+
+    # Income
+    ("Income Calculations", "GET", f"/v2/book/{_BOOK_UUID}/income-calculations", "Income", None),
+    ("Income Summary", "GET", f"/v2/book/{_BOOK_UUID}/income/summary", "Income", None),
+    ("Configure Income Entity", "POST", f"/v2/book/{_BOOK_UUID}/income/entity_config", "Income", None),
+    ("Save Income Guideline", "PUT", f"/v2/book/{_BOOK_UUID}/income-guideline", "Income", None),
+    ("Self-Employed Income (FM)", "POST", f"/v2/book/{_BOOK_UUID}/income/self-employed/calculate", "Income", None),
+
+    # Business history
+    ("Business Identifier", "GET", f"/v2/book/{_BOOK_UUID}/business", "Business History", None),
+    ("Business Overview", "GET", f"/v1/businesses/{_BUSINESS_ID}", "Business History", None),
+    ("Business Summary", "GET", f"/v1/businesses/{_BUSINESS_ID}/summary", "Business History", None),
+    ("Business Transactions", "GET", f"/v1/businesses/{_BUSINESS_ID}/transactions", "Business History", None),
+
+    # Tag Management
     ("Create Tag", "POST", "/v2/analytics/tags", "Tag Management", None),
     ("List Tags", "GET", "/v2/analytics/tags", "Tag Management", None),
-    ("Get Tag", "GET", "/v2/analytics/tags/test-uuid", "Tag Management", None),
-    ("Modify Tag", "PUT", "/v2/analytics/tags/test-uuid", "Tag Management", None),
-    ("Delete Tag", "DELETE", "/v2/analytics/tags/test-uuid", "Tag Management", None),
+    ("Get Tag", "GET", f"/v2/analytics/tags/{_TAG_UUID}", "Tag Management", None),
+    ("Modify Tag", "PUT", f"/v2/analytics/tags/{_TAG_UUID}", "Tag Management", None),
+    ("Delete Tag", "DELETE", f"/v2/analytics/tags/{_TAG_UUID}", "Tag Management", None),
     ("Revenue Deduction Tags", "GET", "/v2/analytics/revenue-deduction-tags", "Tag Management", None),
-    ("Update Rev Deduction Tags", "PUT", "/v2/analytics/revenue-deduction-tags", "Tag Management", None),
-    ("Override Txn Tag", "PUT", "/v2/analytics/book/test-uuid/transactions", "Tag Management", None),
+    ("Update Revenue Deduction Tags", "PUT", "/v2/analytics/revenue-deduction-tags", "Tag Management", None),
+    ("Override Transaction Tag", "PUT", f"/v2/analytics/book/{_BOOK_UUID}/transactions", "Tag Management", None),
 
     # Encore / Book Copy
-    ("Create Copy Jobs", "POST", "/v1/book/copy-jobs", "Encore / Book Copy", None),
-    ("List Copy Jobs", "GET", "/v1/book/copy-jobs", "Encore / Book Copy", None),
-    ("Accept Copy Job", "POST", "/v1/book/copy-jobs/test-id/accept", "Encore / Book Copy", None),
-    ("Reject Copy Job", "POST", "/v1/book/copy-jobs/test-id/reject", "Encore / Book Copy", None),
-    ("Run Kick-Outs", "POST", "/v1/book/copy-jobs/run-kickouts", "Encore / Book Copy", None),
-    ("Copy Settings", "GET", "/v1/settings/book-copy", "Encore / Book Copy", None),
+    ("Create Copy Jobs", "POST", "/v1/book/copy-jobs", "Encore", None),
+    ("List Copy Jobs", "GET", "/v1/book/copy-jobs", "Encore", None),
+    ("Accept Copy Job", "POST", f"/v1/book/copy-jobs/{_JOB_ID}/accept", "Encore", None),
+    ("Reject Copy Job", "POST", f"/v1/book/copy-jobs/{_JOB_ID}/reject", "Encore", None),
+    ("Run Kick-Outs", "POST", "/v1/book/copy-jobs/run-kickouts", "Encore", None),
+    ("Book Copy Settings", "GET", "/v1/settings/book-copy", "Encore", None),
 
     # Webhooks - Org Level
-    ("Add Org Webhook", "POST", "/v1/account/settings/webhook", "Webhooks (Org)", None),
-    ("List Org Webhooks", "GET", "/v1/account/settings/webhooks", "Webhooks (Org)", None),
-    ("Get Org Webhook", "GET", "/v1/account/settings/webhooks/test-id", "Webhooks (Org)", None),
-    ("Update Org Webhook", "PUT", "/v1/account/settings/webhooks/test-id", "Webhooks (Org)", None),
-    ("Delete Org Webhook", "DELETE", "/v1/account/settings/webhooks/test-id", "Webhooks (Org)", None),
-    ("List Webhook Events", "GET", "/v1/account/settings/webhooks/events", "Webhooks (Org)", None),
-    ("Test Org Webhook", "POST", "/v1/account/settings/webhooks/test-id/test", "Webhooks (Org)", None),
-    ("Configure Org Secret", "POST", "/v1/account/settings/webhooks/secret", "Webhooks (Org)", None),
+    ("Add Webhook", "POST", "/v1/account/settings/webhook", "Org Level Webhooks", None),
+    ("List Webhooks", "GET", "/v1/account/settings/webhooks", "Org Level Webhooks", None),
+    ("Retrieve Webhook", "GET", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}", "Org Level Webhooks", None),
+    ("Update Webhook", "POST", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}/update", "Org Level Webhooks", None),
+    ("Delete Webhook", "DELETE", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}/delete", "Org Level Webhooks", None),
+    ("List Webhook Events", "GET", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}/events", "Org Level Webhooks", None),
+    ("Test Webhook", "POST", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}/test", "Org Level Webhooks", None),
+    ("Rotate Webhook Secret", "POST", f"/v1/account/settings/webhook/{_WEBHOOK_UUID}/rotate-secret", "Org Level Webhooks", None),
 
-    # Webhooks - Account Level
-    ("Configure Account Webhook", "POST", "/v1/webhook/configure", "Webhooks (Account)", None),
-    ("Get Account Webhook Config", "GET", "/v1/webhook/configuration", "Webhooks (Account)", None),
-    ("Test Account Webhook", "POST", "/v1/webhook/test", "Webhooks (Account)", None),
-    ("Configure Account Secret", "POST", "/v1/webhook/secret", "Webhooks (Account)", None),
+    # Webhooks - Account Level (legacy)
+    ("Configure Webhook (legacy)", "POST", "/v1/account/settings/update/webhook_endpoint", "Account Level Webhooks", None),
+    ("Webhook Configuration (legacy)", "GET", "/v1/account/settings/webhook_details", "Account Level Webhooks", None),
+    ("Test Webhook (legacy)", "GET", "/v1/account/settings/test_webhook_endpoint", "Account Level Webhooks", None),
+    ("Rotate Secret (legacy)", "POST", "/v1/account/settings/webhook/rotate-secret", "Account Level Webhooks", None),
 ]
 
 
@@ -278,17 +303,32 @@ def probe_endpoint(token: str, method: str, path: str, params: Optional[dict] = 
             resp = requests.request(method.upper(), url, headers=headers, json={}, timeout=15)
         elapsed_ms = round((time.time() - start) * 1000)
 
-        # Determine status
-        route_exists = resp.status_code != 404
+        # Ocrolus often returns HTTP 200 with an error envelope. Distinguish a
+        # real "route does not exist" (HTTP 404, or 200 envelope with the literal
+        # "Resource not found" message) from "route exists but our probe was rejected".
+        envelope_msg = ""
+        try:
+            body = resp.json()
+            if isinstance(body, dict):
+                envelope_msg = body.get("message") or ""
+        except Exception:
+            pass
+
+        looks_like_missing_route = (
+            resp.status_code == 404
+            or "Resource not found" in envelope_msg
+        )
+        route_exists = not looks_like_missing_route
         # 400/401/403/405/422 on write endpoints means the route exists
-        is_reachable = resp.status_code != 404
+        is_reachable = route_exists
 
         return {
             "status_code": resp.status_code,
             "response_time_ms": elapsed_ms,
             "exists": route_exists,
-            "success": resp.ok,
+            "success": resp.ok and "Resource not found" not in envelope_msg,
             "reachable": is_reachable,
+            "envelope_message": envelope_msg[:140] if envelope_msg else None,
             "error": None,
         }
     except requests.Timeout:

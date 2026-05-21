@@ -26,7 +26,7 @@ A Python/Flask implementation of the [Ocrolus embeddable widget](https://docs.oc
 2. **Configure credentials:**
 
    ```bash
-   cd tools/widget-quickstart
+   cd examples/widget-quickstart
    cp .env.example .env
    ```
 

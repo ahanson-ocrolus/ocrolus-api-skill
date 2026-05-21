@@ -213,7 +213,7 @@ export OCROLUS_CLIENT_ID="your_id"
 export OCROLUS_CLIENT_SECRET="your_secret"
 
 # 2. Start webhook listener + ngrok tunnel + register
-python tools/webhook_setup.py auto
+python scripts/webhook_setup.py auto
 
 # 3. IMPORTANT: Go to Ocrolus Dashboard > Settings > Webhooks
 #    Edit the webhook and subscribe to the events you want to receive.
@@ -227,13 +227,13 @@ python tools/webhook_setup.py auto
 
 ```bash
 # Start listener
-python tools/webhook_setup.py listen --port 8080
+python scripts/webhook_setup.py listen --port 8080
 
 # In another terminal, start ngrok
 ngrok http 8080
 
 # Register the ngrok URL
-python tools/webhook_setup.py register --url https://YOUR-URL.ngrok-free.dev/webhooks/ocrolus
+python scripts/webhook_setup.py register --url https://YOUR-URL.ngrok-free.dev/webhooks/ocrolus
 
 # Then subscribe to events in the Ocrolus dashboard
 ```
