@@ -27,9 +27,18 @@ The body **must** be form-encoded (`application/x-www-form-urlencoded`). JSON bo
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| Create Book | POST | `/v1/book/add` | **Body (JSON):** `name`, `book_type`, `book_class`, `is_public`, `xid` |
-| Update Book | POST | `/v1/book/update` | **Body (JSON):** `pk` OR `book_uuid`, `name`, `book_type`, `book_class`, `is_public`, `xid` |
+| Create Book | POST | `/v1/book/add` | **Body (JSON):** `name` (required); `book_class` = `INSTANT` (machine-only) \| `COMPLETE` (HITL, default); `book_type` = `DEFAULT` \| `INSTANT_ML` (optional); `is_public`, `xid` (optional) |
+| Update Book | POST | `/v1/book/update` | **Body (JSON):** `pk` OR `book_uuid`, optional `name`, `book_type`, `book_class`, `is_public`, `xid` |
 | Delete Book | POST | `/v1/book/remove` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) |
+
+#### `book_class` values
+
+`book_class` is set at book creation. Map the user's natural-language request to one of:
+
+- **`INSTANT`** — machine-only processing. Synonyms: "instant", "instantly", "machine only", "automated", "no human review", "fast".
+- **`COMPLETE`** — includes human verification of low-confidence fields. Default when `book_class` is omitted. Synonyms: "complete", "HITL", "human in the loop", "human verification", "human-verified", "highest accuracy".
+
+Any other value (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `individual` / `business`) returns `400 Invalid dictionary value @ data["book_class"]`. `book_type` is a separate field and only accepts `DEFAULT` or `INSTANT_ML`.
 
 ### Book Queries
 
