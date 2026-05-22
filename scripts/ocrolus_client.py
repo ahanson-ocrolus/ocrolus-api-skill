@@ -171,9 +171,21 @@ class OcrolusClient:
             -> ``book_class="INSTANT"``
           - "complete" / "HITL" / "human in the loop" / "human verification"
             -> ``book_class="COMPLETE"`` (also the default when omitted)
+          - "classify only" / "stop after classification" / "no capture"
+            -> ``book_class="INSTANT_CLASSIFY_ONLY"`` (rare; stops after
+            classification, integrator routes each doc via the
+            ``book.classified`` webhook)
+          - "classify everything, capture ISO app"
+            -> ``book_class="INSTANT_CLASSIFY_ISO_CAPTURE"`` (rare; same as
+            above except ISO applications continue through capture; integrator
+            uses ``book.verified`` for the ISO doc, ``book.classified`` for the
+            rest)
 
-        Only ``INSTANT`` and ``COMPLETE`` are valid for ``book_class``. The API
-        rejects everything else with ``400 Invalid dictionary value``.
+        These four values are the only ones the API accepts; anything else
+        (``CLASSIFY``, ``INSTANT_CLASSIFY``, ``individual``, ...) returns
+        ``400 Invalid dictionary value``. Default to INSTANT or COMPLETE for
+        ordinary use; only pick an ``INSTANT_CLASSIFY_*`` variant when the user
+        explicitly describes that stop-after-classify orchestration.
 
         ``book_type`` is a separate field that only accepts ``DEFAULT`` or
         ``INSTANT_ML``; omit it for normal usage.
