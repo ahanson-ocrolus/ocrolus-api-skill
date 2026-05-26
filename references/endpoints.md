@@ -27,9 +27,22 @@ The body **must** be form-encoded (`application/x-www-form-urlencoded`). JSON bo
 
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
-| Create Book | POST | `/v1/book/add` | **Body (JSON):** `name`, `book_type`, `book_class`, `is_public`, `xid` |
-| Update Book | POST | `/v1/book/update` | **Body (JSON):** `pk` OR `book_uuid`, `name`, `book_type`, `book_class`, `is_public`, `xid` |
+| Create Book | POST | `/v1/book/add` | **Body (JSON):** `name` (required); `book_class` = `INSTANT` \| `COMPLETE` \| `INSTANT_CLASSIFY_ONLY` \| `INSTANT_CLASSIFY_ISO_CAPTURE` (see below); `book_type` = `DEFAULT` \| `INSTANT_ML` (optional); `is_public`, `xid` (optional) |
+| Update Book | POST | `/v1/book/update` | **Body (JSON):** `pk` OR `book_uuid`, optional `name`, `book_type`, `book_class`, `is_public`, `xid` |
 | Delete Book | POST | `/v1/book/remove` | **Body (JSON):** `book_id` (integer) OR `book_uuid` (UUID) |
+
+#### `book_class` values
+
+`book_class` is set at book creation and cannot be changed later. Map the user's natural-language request to one of:
+
+- **`INSTANT`** — machine-only processing through the full pipeline (classify → capture → analyze). Synonyms: "instant", "instantly", "machine only", "automated", "no human review", "fast".
+- **`COMPLETE`** — full pipeline with human verification of low-confidence fields. Default when `book_class` is omitted. Synonyms: "complete", "HITL", "human in the loop", "human verification", "human-verified", "highest accuracy".
+- **`INSTANT_CLASSIFY_ONLY`** *(rare)* — stops processing after classification; nothing is captured or analyzed. The integrator listens for `book.classified` and decides per-document what to do next (based on `form_type`). Synonyms: "classify only", "stop after classification", "just classify", "classification only", "no capture".
+- **`INSTANT_CLASSIFY_ISO_CAPTURE`** *(rare)* — same as `INSTANT_CLASSIFY_ONLY` for every document **except ISO applications**, which continue through capture. The integrator uses `book.classified` for the stopped-at-classify docs and `book.verified` to know the ISO app finished capture. Synonyms: "ISO app capture only", "classify everything, capture ISO".
+
+Default to `INSTANT` or `COMPLETE` for ordinary use. The two `INSTANT_CLASSIFY_*` variants exist for orchestrators that need to inspect documents and decide what to do next — don't use them unless the user explicitly describes that workflow.
+
+Any other value (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `individual` / `business`) returns `400 Invalid dictionary value @ data["book_class"]`. `book_type` is a separate field and only accepts `DEFAULT` or `INSTANT_ML`.
 
 ### Book Queries
 

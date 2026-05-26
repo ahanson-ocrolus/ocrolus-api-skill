@@ -67,15 +67,34 @@ A Book is the container for documents in a single application/case. When you cre
 
 Persist both. v1 endpoints reject UUIDs; v2 endpoints reject integer pks. Where v1 endpoints accept either, the form/JSON field is named `pk` (integer) or `book_uuid` (UUID).
 
+## Processing Mode — `book_class`
+
+Set `book_class` **when creating the book** (`POST /v1/book/add`). It cannot be changed after creation. Map the user's natural-language request to one of these four values:
+
+| User says… | `book_class` value | What it means |
+|------------|--------------------|---------------|
+| "instant", "instantly", "machine only", "automated", "no human review", "fast", "Instant" | **`INSTANT`** | Machine-only processing through the full pipeline (classify → capture → analyze). Fastest result, no human verification step. |
+| "complete", "HITL", "human in the loop", "human verification", "human-verified", "highest accuracy", "Complete" | **`COMPLETE`** | Full pipeline with human review of low-confidence fields. Slower but higher accuracy. **Default when `book_class` is omitted.** |
+| "classify only", "stop after classification", "just classify", "classification only", "no capture" | **`INSTANT_CLASSIFY_ONLY`** *(rare)* | Stops processing after classification. Listen for the `book.classified` webhook and route each document yourself based on its `form_type`. |
+| "ISO app capture only", "classify everything, capture ISO" | **`INSTANT_CLASSIFY_ISO_CAPTURE`** *(rare)* | Same as `INSTANT_CLASSIFY_ONLY` for every document **except ISO applications**, which continue through capture. Listen for `book.classified` for the stops-at-classify docs, and `book.verified` to know the ISO app finished capture. |
+
+Other values (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `individual` / `business`) return `400 Invalid dictionary value @ data["book_class"]`.
+
+**Don't use `INSTANT_CLASSIFY_ONLY` or `INSTANT_CLASSIFY_ISO_CAPTURE` unless the user explicitly asks for that "stop-after-classify" workflow** — they're for orchestrators that need to inspect documents and decide what to do next based on form type. For ordinary processing, default to `INSTANT` or `COMPLETE`.
+
+`book_type` is a separate field and only accepts `DEFAULT` or `INSTANT_ML`. If you only need a normal processing book, omit it (the API defaults to `DEFAULT`).
+
 ## 5-Minute Quick Start
 
 ```bash
-# 1. Create a book
+# 1. Create a book — set book_class to INSTANT for machine-only processing,
+#    or omit it (defaults to COMPLETE) for human-in-the-loop verification.
 curl -X POST https://api.ocrolus.com/v1/book/add \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Application #12345", "book_type": "individual"}'
-# → {"pk": 71250194, "uuid": "09c52985-...", ...}
+  -d '{"name": "Application #12345", "book_class": "INSTANT"}'
+# → 200 OK with envelope:
+#   {"status":200,"response":{"pk":71250194,"uuid":"09c52985-...","book_class":"INSTANT",...},"message":"OK"}
 
 # 2. Upload a PDF (multipart; field is `pk`, not `book_pk`)
 curl -X POST https://api.ocrolus.com/v1/book/upload \
@@ -101,13 +120,17 @@ from scripts.ocrolus_client import OcrolusClient  # or copy scripts/ocrolus_clie
 
 client = OcrolusClient()  # reads OCROLUS_CLIENT_ID / OCROLUS_CLIENT_SECRET
 
-book = client.create_book("Application #12345")
-client.upload_pdf(book["pk"], "bank_statement.pdf")
-client.wait_for_book(book["pk"], timeout=600)
+# book_class="INSTANT" → machine-only. Omit (or "COMPLETE") for HITL.
+env  = client.create_book("Application #12345", book_class="INSTANT")
+book = env["response"]
+pk, uuid = book["pk"], book["uuid"]
 
-summary  = client.get_book_summary(book["uuid"])
-fraud    = client.get_book_fraud_signals(book["uuid"])
-income   = client.get_income_calculations(book["uuid"])
+client.upload_pdf(pk, "bank_statement.pdf")
+client.wait_for_book(book_pk=pk, timeout=600)
+
+summary  = client.get_book_summary(uuid)
+fraud    = client.get_book_fraud_signals(uuid)
+income   = client.get_income_calculations(uuid)
 ```
 
 ## Capability Reference
@@ -118,7 +141,7 @@ Endpoints below mirror the structure at <https://docs.ocrolus.com/reference>. Pr
 
 | Operation | Method & Path | Notes |
 |-----------|---------------|-------|
-| Create Book | `POST /v1/book/add` | Body: `name`, `book_type`, `book_class`. Returns `pk` and `uuid`. |
+| Create Book | `POST /v1/book/add` | Body: `name` (required), `book_class` (`INSTANT` or `COMPLETE` — see "Processing Mode" section), optional `book_type` (`DEFAULT` \| `INSTANT_ML`), `is_public`, `xid`. Returns `pk` and `uuid`. |
 | Book information | `GET /v1/book/info?pk={pk}` | Or `?book_uuid={uuid}`. |
 | Book list | `GET /v1/books` | Optional `limit`, `offset`, `order`, `order_by`, `name`, `search`, `xid`. |
 | Update Book | `POST /v1/book/update` | Body: `pk` or `book_uuid`, plus fields to update. |
@@ -311,6 +334,9 @@ OCROLUS_WIDGET_CLIENT_SECRET=...
 
 ## Things People Miss
 
+- **The endpoint is `POST /v1/book/add`** — not `/v1/book/create`, `/v1/books`, or `/v1/book`. Other paths return 404 or the wrong action.
+- **`book_class` is set at book creation and cannot be changed later.** Four accepted values: `INSTANT` (machine-only, full pipeline), `COMPLETE` (HITL, full pipeline; default), and the rare `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE` for orchestrators that stop processing at classification and use webhooks (`book.classified`, `book.verified`) to route each document themselves. See the "Processing Mode" section above for the full synonym map. The API rejects everything else (`CLASSIFY`, `INSTANT_CLASSIFY`, `individual`, `business`).
+- **`book_type` is a different field** that only accepts `DEFAULT` or `INSTANT_ML`. Don't confuse it with `book_class`. If unsure, omit it.
 - **Auth body must be form-encoded.** JSON-encoded bodies — or adding an `audience` parameter — return `403 unauthorized_client`.
 - **Upload form field is `pk` (or `book_uuid`)** — not `book_pk`. Using `book_pk` returns "Required pk or book uuid".
 - **`pk` and `uuid` are not interchangeable.** v1 endpoints typically take the integer `pk`; v2 endpoints take the UUID. Mismatches return 404 or empty results.

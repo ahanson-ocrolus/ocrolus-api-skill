@@ -155,13 +155,54 @@ class OcrolusClient:
     # BOOK OPERATIONS (v1, uses book_pk integer)
     # =========================================================================
 
-    def create_book(self, name: str, **kwargs) -> dict:
-        """Create a new Book. Returns dict with 'pk' (int) and 'uuid' (str).
+    def create_book(self, name: str, book_class: Optional[str] = None,
+                     book_type: Optional[str] = None,
+                     is_public: Optional[bool] = None,
+                     xid: Optional[str] = None,
+                     **kwargs) -> dict:
+        """Create a new Book.
 
-        Note: The endpoint is /v1/book/add (NOT /v1/book/create which returns 404).
-        The 'book_type' parameter is not accepted; books default to 'DEFAULT' type.
+        Public docs path: POST /v1/book/add. Returns the envelope
+        ``{ "status": 200, "response": { "pk": int, "uuid": str, ... } }``.
+
+        Set ``book_class`` at creation — it cannot be changed afterwards. Map the
+        user's natural-language request:
+          - "instant" / "instantly" / "machine only" / "no human review"
+            -> ``book_class="INSTANT"``
+          - "complete" / "HITL" / "human in the loop" / "human verification"
+            -> ``book_class="COMPLETE"`` (also the default when omitted)
+          - "classify only" / "stop after classification" / "no capture"
+            -> ``book_class="INSTANT_CLASSIFY_ONLY"`` (rare; stops after
+            classification, integrator routes each doc via the
+            ``book.classified`` webhook)
+          - "classify everything, capture ISO app"
+            -> ``book_class="INSTANT_CLASSIFY_ISO_CAPTURE"`` (rare; same as
+            above except ISO applications continue through capture; integrator
+            uses ``book.verified`` for the ISO doc, ``book.classified`` for the
+            rest)
+
+        These four values are the only ones the API accepts; anything else
+        (``CLASSIFY``, ``INSTANT_CLASSIFY``, ``individual``, ...) returns
+        ``400 Invalid dictionary value``. Default to INSTANT or COMPLETE for
+        ordinary use; only pick an ``INSTANT_CLASSIFY_*`` variant when the user
+        explicitly describes that stop-after-classify orchestration.
+
+        ``book_type`` is a separate field that only accepts ``DEFAULT`` or
+        ``INSTANT_ML``; omit it for normal usage.
+
+        Note: the endpoint is ``/v1/book/add`` — ``/v1/book/create`` returns 404.
         """
-        return self._post("/v1/book/add", json={"name": name, **kwargs})
+        body: dict[str, Any] = {"name": name}
+        if book_class is not None:
+            body["book_class"] = book_class
+        if book_type is not None:
+            body["book_type"] = book_type
+        if is_public is not None:
+            body["is_public"] = is_public
+        if xid is not None:
+            body["xid"] = xid
+        body.update(kwargs)
+        return self._post("/v1/book/add", json=body)
 
     def get_book(self, book_pk: Optional[int] = None, book_uuid: Optional[str] = None) -> dict:
         """Get Book information. Public docs path: GET /v1/book/info?pk= or ?book_uuid=."""
