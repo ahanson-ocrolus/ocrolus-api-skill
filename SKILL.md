@@ -133,6 +133,75 @@ fraud    = client.get_book_fraud_signals(uuid)
 income   = client.get_income_calculations(uuid)
 ```
 
+## Retrieving Data from a Processed Book
+
+Once a book finishes processing (watch `book.verified` / `book.completed` webhooks, or poll `/v1/book/status`), pick the endpoint that matches what the user is actually asking for. **Don't dump every endpoint** — these all return large payloads and they overlap.
+
+### Picker — user intent → endpoint
+
+| The user asks… | Call |
+|---|---|
+| "Is processing done? What docs are in this book?" | `GET /v1/book/info` |
+| "What document types did Ocrolus identify?" | `GET /v2/book/{book_uuid}/classification-summary` |
+| "Give me every captured field across the whole book" | `GET /v1/book/forms` |
+| "Show me captured fields from THIS document" | `GET /v1/document/forms/fields` |
+| "Get fields from THIS one form" *(you already have a v1 form UUID)* | `GET /v1/form` |
+| "Show me the raw transactions" | `GET /v1/transaction` |
+| "Show me **categorized** transactions / counterparty / NSFs" | `GET /v2/book/{book_uuid}/enriched_txns` *(preferred)* |
+| "Any fraud / tampering / authenticity issues in this book?" | `GET /v2/detect/book/{book_uuid}/signals` |
+| "Is THIS specific document fake?" | `GET /v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals` |
+| "What's the monthly revenue / expense / cash flow?" | `GET /v2/book/{book_uuid}/summary` |
+| "Underwriting metrics — average balance, NSF count, deposit volume…" | `GET /v2/book/{book_uuid}/cash_flow_features` |
+| "What's the qualifying income for this borrower?" | `GET /v2/book/{book_uuid}/income/summary` |
+| "Break income down by source, employer, property, with alerts" | `GET /v2/book/{book_uuid}/income-calculations` |
+
+### General Book Info
+
+**`GET /v1/book/info`** *(query `pk` or `book_uuid`)*
+Book metadata + the lists of uploaded docs and bank accounts (each with processing status). **Call this first** after upload to confirm what's in a book and whether processing finished. Lightweight; precedes drilling into forms/transactions/analytics.
+
+### Classify
+
+**`GET /v2/book/{book_uuid}/classification-summary`**
+Returns `forms[]` with `form_type` (e.g. `BANK_STATEMENT`, `PAYSTUB`, `W2`), `status` (e.g. `COMPLETED`, `REJECTED`), and `uniqueness_values` (key fields extracted at classify-time with confidence scores). Use this to answer "what kinds of documents are these?", "did any docs get rejected?", or to drive the orchestration when `book_class` is `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE`.
+
+> ⚠️ The `form_uuid` returned here is a **v2** UUID and is NOT compatible with `GET /v1/form`. To fetch raw fields per form when starting from this endpoint, use `GET /v2/book/{book_uuid}/forms` instead.
+
+### Capture (extracted fields)
+
+Three sibling endpoints — pick by scope:
+
+- **`GET /v1/book/forms`** *(query `pk` or `book_uuid`)* — every captured form in the book, in one call. Prefer this over looping `/v1/form` per form. Returns `forms[]` with each form's `form_type` and field data.
+- **`GET /v1/document/forms/fields`** *(query `doc_uuid` or `pk`)* — every form captured from one specific uploaded document. Use when you're already iterating documents (e.g. from `/v1/book/info`).
+- **`GET /v1/form`** *(query `uuid` or `pk`)* — a single form's `raw_fields` (values + confidence scores). Use only when you already have a **v1** form UUID from one of the two endpoints above. **Don't pass a UUID from `/v2/.../classification-summary` here** — see the warning in the Classify section.
+
+### Capture (transactions)
+
+- **`GET /v1/transaction`** *(query `book_pk` or `book_uuid`, optionally `uploaded_doc_pk` / `uploaded_doc_uuid` to scope to one doc)* — raw transaction ledger lines + detected check images. Use only when the user explicitly wants verbatim transactions and nothing else.
+- **`GET /v2/book/{book_uuid}/enriched_txns`** — same transactions with `counterparty` (standardized name), `expense`/`revenue` flags, categorization tags (fintech_loan, merchant_service, NSF, etc.), reconciliation mismatch detection, and optional pending Plaid transactions. **Prefer this over `/v1/transaction` for any analytical question** — the docs themselves point readers here.
+
+### Detect (Fraud)
+
+- **`GET /v2/detect/book/{book_uuid}/signals`** — book-wide. Returns `doc_analysis[]` with each document's `uploaded_doc_type`, detected fraud `signals`, and `visualizations` (image overlays of tampering regions). Use for "is anything in this book fraudulent?"
+- **`GET /v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals`** — scoped to one document. Adds `form_analysis` and a `form_authenticity` score (0–100 with confidence reasons). Use when you already have a suspicious `uploaded_doc_uuid` — don't walk the whole book.
+
+> These v2 detect endpoints **supersede** the older Suspicious Activity Flags endpoint and the reconciliation-error attributes on legacy Analytics responses. Don't mix them.
+
+### Analyze (cash flow)
+
+Three book-level analytics endpoints, each with a different shape — they are not redundant:
+
+- **`GET /v2/book/{book_uuid}/summary`** — human-readable monthly rollups: `revenue_by_month`, `expense_by_month`, `net_cash_flows_by_month`, `daily_balances`, top `counterparties`, `fintech_loan_sources`. Use for "show me cash flow over time" / executive-summary questions.
+- **`GET /v2/book/{book_uuid}/cash_flow_features`** — a wide flat object of 200+ numeric metrics (average daily balance, NSF counts, deposit volume trends, etc.) for feeding underwriting models. Returns `null` for 3-month metrics when fewer than 3 months of data are present.
+- **`GET /v2/book/{book_uuid}/enriched_txns`** — see Capture (transactions) above. Line-item rather than aggregate.
+
+### Income (mortgage)
+
+Both endpoints accept the same `guideline` query param (`FANNIE_MAE` (default) \| `FREDDIE_MAC` \| `FHA` \| `VA` \| `USDA`).
+
+- **`GET /v2/book/{book_uuid}/income/summary`** — single qualifying-income figure per borrower under the chosen guideline. Use when the user only needs the headline number.
+- **`GET /v2/book/{book_uuid}/income-calculations`** — full breakdown: `incomes[]` by source, `borrowers[]`, `employers[]`, `properties[]`, aggregated `totals`, and `alerts[]` (non-recurring income / anomaly flags with severity). Use this — and pair it with Income Summary — when explaining a qualifying-income decision.
+
 ## Capability Reference
 
 Endpoints below mirror the structure at <https://docs.ocrolus.com/reference>. Prefer v2/UUID endpoints when both exist.
