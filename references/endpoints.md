@@ -121,6 +121,7 @@ Extract structured data from documents (forms, pay stubs, transactions). Uses qu
 | Endpoint | Method | Path | Input |
 |----------|--------|------|-------|
 | Book form data | GET | `/v1/book/forms` | **Query:** `pk` OR `book_uuid` |
+| Book form raw fields (v2) | GET | `/v2/book/{book_uuid}/forms` | **Path:** `book_uuid` |
 | Doc form data | GET | `/v1/document/forms/fields` | **Query:** `pk` OR `doc_uuid`; optional `include_all`, `include_bboxes` |
 | Form data | GET | `/v1/form` | **Query:** `uuid` OR `pk` |
 | Book pay stub data | GET | `/v2/book/{book_uuid}/paystub` | **Path:** `book_uuid` |
@@ -130,6 +131,7 @@ Extract structured data from documents (forms, pay stubs, transactions). Uses qu
 
 - Per-field confidence scores (0 = no confidence, 1 = very high).
 - Pay stub endpoints moved to v2; the v1 forms remain document-agnostic.
+- `GET /v2/book/{book_uuid}/forms` returns raw fields keyed by **v2** `form_uuid`. Use it (not `/v1/form`) to fetch per-form raw fields when you started from `/v2/book/{book_uuid}/classification-summary` — that endpoint's `form_uuid` is a v2 id and is rejected by `/v1/form`.
 
 **Undocumented aliases the live API still answers (don't rely on these in new code):**
 - `GET /v1/book/{pk}/forms` (use `/v1/book/forms?pk=` instead)
