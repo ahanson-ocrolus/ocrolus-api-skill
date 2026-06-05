@@ -19,7 +19,7 @@ Other document types are NOT processed with Detect.
 | Operation | Method | Path |
 |-----------|--------|------|
 | Book-Level Fraud Signals | GET | `/v2/detect/book/{book_uuid}/signals` |
-| Document-Level Fraud Signals | GET | `/v2/detect/document/{doc_uuid}/signals` |
+| Document-Level Fraud Signals | GET | `/v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals` |
 | Signal Visualization | GET | `/v2/detect/visualization/{visualization_uuid}` |
 
 **IMPORTANT:** These are the current endpoints. The legacy paths (`/v1/.../fraud-signals`) and the Suspicious Activity Flags endpoint (`/v1/book/{book_uuid}/suspicious-activity-flags`) are deprecated.

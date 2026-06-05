@@ -135,7 +135,17 @@ income   = client.get_income_calculations(uuid)
 
 ## Retrieving Data from a Processed Book
 
-Once a book finishes processing (watch `book.verified` / `book.completed` webhooks, or poll `/v1/book/status`), pick the endpoint that matches what the user is actually asking for. **Don't dump every endpoint** — these all return large payloads and they overlap.
+Pick the endpoint that matches what the user is actually asking for. **Don't dump every endpoint** — these all return large payloads and they overlap.
+
+**Mind the timing — different data is ready at different events:**
+
+| Ready at | Webhook | Endpoints |
+|---|---|---|
+| Classification | `book.classified` | `classification-summary` |
+| Capture | `book.verified` | `/v1/transaction` (bank statements), form endpoints (form-type docs) |
+| **Analytics / income** | **`book.completed`** (or `book.analytics_v2.generated`) | `summary`, `enriched_txns`, `cash_flow_features`, `income-calculations` |
+
+The **analytics and income endpoints return `HTTP 425 "Too Early"` until generated** — call them after `book.completed`, **not** at `book.verified`. (For bank statements, "capture" means transactions, not forms — the form endpoints return empty.)
 
 ### Picker — user intent → endpoint
 
@@ -143,8 +153,9 @@ Once a book finishes processing (watch `book.verified` / `book.completed` webhoo
 |---|---|
 | "Is processing done? What docs are in this book?" | `GET /v1/book/info` |
 | "What document types did Ocrolus identify?" | `GET /v2/book/{book_uuid}/classification-summary` |
-| "Give me every captured field across the whole book" | `GET /v1/book/forms` |
-| "Show me captured fields from THIS document" | `GET /v1/document/forms/fields` |
+| "Captured fields from **form-type docs** (W2, pay stub, tax)" | `GET /v2/book/{book_uuid}/forms` *(preferred over `/v1/book/forms`)* |
+| "Captured data from a **bank statement**" | `GET /v1/transaction` (the txns *are* the capture) + `classification-summary` `uniqueness_values` for header fields — bank statements do **not** populate the form endpoints |
+| "Show me captured fields from THIS document" *(form-type doc)* | `GET /v1/document/forms/fields` |
 | "Get fields from THIS one form" *(you already have a v1 form UUID)* | `GET /v1/form` |
 | "Show me the raw transactions" | `GET /v1/transaction` |
 | "Show me **categorized** transactions / counterparty / NSFs" | `GET /v2/book/{book_uuid}/enriched_txns` *(preferred)* |
@@ -169,16 +180,19 @@ Returns `forms[]` with `form_type` (e.g. `BANK_STATEMENT`, `PAYSTUB`, `W2`), `st
 
 ### Capture (extracted fields)
 
-Three sibling endpoints — pick by scope:
+> **Bank statements do not populate the form endpoints** (all return empty). Their capture is **transactions** (see below) plus the header fields in `classification-summary` → `uniqueness_values`. The form endpoints here are for **form-type documents** (W2, pay stub, tax forms, applications).
 
-- **`GET /v1/book/forms`** *(query `pk` or `book_uuid`)* — every captured form in the book, in one call. Prefer this over looping `/v1/form` per form. Returns `forms[]` with each form's `form_type` and field data.
-- **`GET /v1/document/forms/fields`** *(query `doc_uuid` or `pk`)* — every form captured from one specific uploaded document. Use when you're already iterating documents (e.g. from `/v1/book/info`).
-- **`GET /v1/form`** *(query `uuid` or `pk`)* — a single form's `raw_fields` (values + confidence scores). Use only when you already have a **v1** form UUID from one of the two endpoints above. **Don't pass a UUID from `/v2/.../classification-summary` here** — see the warning in the Classify section.
+For form-type docs, pick by scope:
+
+- **`GET /v2/book/{book_uuid}/forms`** — raw fields for every captured form in the book. **Preferred** over `/v1/book/forms`, and the correct call when you started from `/v2/.../classification-summary` (whose `form_uuid` is a v2 id).
+- **`GET /v1/book/forms`** *(query `pk` or `book_uuid`)* — older book-level forms call; use only if you specifically need the v1 response shape.
+- **`GET /v1/document/forms/fields`** *(query `doc_uuid` or `pk`)* — forms captured from one specific uploaded document.
+- **`GET /v1/form`** *(query `uuid` or `pk`)* — a single form's `raw_fields`. Use only with a **v1** form UUID; a v2 `form_uuid` from classification-summary returns `400 "DB Object Not Found"`.
 
 ### Capture (transactions)
 
-- **`GET /v1/transaction`** *(query `book_pk` or `book_uuid`, optionally `uploaded_doc_pk` / `uploaded_doc_uuid` to scope to one doc)* — raw transaction ledger lines + detected check images. Use only when the user explicitly wants verbatim transactions and nothing else.
-- **`GET /v2/book/{book_uuid}/enriched_txns`** — same transactions with `counterparty` (standardized name), `expense`/`revenue` flags, categorization tags (fintech_loan, merchant_service, NSF, etc.), reconciliation mismatch detection, and optional pending Plaid transactions. **Prefer this over `/v1/transaction` for any analytical question** — the docs themselves point readers here.
+- **`GET /v1/transaction`** *(query `book_pk` or `book_uuid`, optionally `uploaded_doc_pk` / `uploaded_doc_uuid` to scope to one doc)* — raw transaction ledger lines + detected check images. **This is the capture output for bank statements**, available at `book.verified`.
+- **`GET /v2/book/{book_uuid}/enriched_txns`** — the same transactions enriched with `counterparty` (standardized name), `expense`/`revenue` flags, categorization tags (fintech_loan, merchant_service, NSF, etc.), reconciliation mismatch detection, and optional pending Plaid transactions. This is an **analytics** endpoint — ready at `book.completed` (returns `425` before), **not** capture. Prefer it for any analytical question.
 
 ### Detect (Fraud)
 
@@ -253,7 +267,8 @@ Each classification carries a confidence score (0–1). Uniqueness Values (UV) e
 
 | Operation | Method & Path |
 |-----------|---------------|
-| Book forms | `GET /v1/book/forms?pk={pk}` (or `?book_uuid={uuid}`) |
+| Book forms (v2, **preferred**) | `GET /v2/book/{book_uuid}/forms` |
+| Book forms (v1, legacy shape) | `GET /v1/book/forms?pk={pk}` (or `?book_uuid={uuid}`) |
 | Book pay stubs | `GET /v2/book/{book_uuid}/paystub` |
 | Document form fields | `GET /v1/document/forms/fields?doc_uuid={uuid}` |
 | Document pay stubs | `GET /v2/document/{doc_uuid}/paystub` |

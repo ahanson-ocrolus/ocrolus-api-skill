@@ -116,6 +116,19 @@ def api_request(method: str, path: str, token: str, body: dict = None) -> dict:
 # ---------------------------------------------------------------------------
 # Webhook registration commands
 # ---------------------------------------------------------------------------
+def _extract_webhook_uuid(result):
+    """Pull the webhook_uuid out of an org-level webhook response envelope."""
+    if not isinstance(result, dict):
+        return None
+    candidates = [result, result.get("response")]
+    for obj in candidates:
+        if isinstance(obj, dict):
+            for key in ("uuid", "webhook_uuid", "id", "webhook_id"):
+                if obj.get(key):
+                    return obj[key]
+    return None
+
+
 def cmd_list(args):
     """List all registered webhooks."""
     token = get_token()
@@ -123,8 +136,8 @@ def cmd_list(args):
     result = api_request("GET", "/v1/account/settings/webhooks", token)
     print(json.dumps(result, indent=2))
 
-    logger.info("Fetching account-level webhook config...")
-    result2 = api_request("GET", "/v1/webhook/configuration", token)
+    logger.info("Fetching account-level (legacy) webhook config...")
+    result2 = api_request("GET", "/v1/account/settings/webhook_details", token)
     print(json.dumps(result2, indent=2))
 
 
@@ -142,12 +155,9 @@ def cmd_register(args):
         logger.info(f"Generated webhook secret (save this!): {webhook_secret}")
         logger.info("Set it as: export OCROLUS_WEBHOOK_SECRET='%s'", webhook_secret)
 
-    # First, configure the signing secret
-    logger.info("Configuring webhook signing secret...")
-    secret_result = api_request("POST", "/v1/account/settings/webhooks/secret", token, {"secret": webhook_secret})
-    print(f"Secret config result: {json.dumps(secret_result, indent=2)}")
-
-    # Register the webhook
+    # Org-level model: register the webhook first, then set its per-webhook
+    # signing secret (the secret is scoped to a webhook_uuid that only exists
+    # after creation).
     logger.info(f"Registering webhook URL: {url}")
     register_body = {"url": url}
     if args.events:
@@ -156,25 +166,22 @@ def cmd_register(args):
     result = api_request("POST", "/v1/account/settings/webhook", token, register_body)
     print(f"\nWebhook registration result:\n{json.dumps(result, indent=2)}")
 
-    # Extract webhook ID for test
-    webhook_id = None
-    if isinstance(result, dict):
-        # Try common response shapes
-        for key in ("id", "webhook_id", "pk"):
-            if key in result:
-                webhook_id = result[key]
-                break
-        if not webhook_id and "response" in result and isinstance(result["response"], dict):
-            for key in ("id", "webhook_id", "pk"):
-                if key in result["response"]:
-                    webhook_id = result["response"][key]
-                    break
+    # Extract the webhook_uuid for the secret/test steps
+    webhook_id = _extract_webhook_uuid(result)
 
     if webhook_id:
-        logger.info(f"Webhook registered with ID: {webhook_id}")
-        logger.info("Run 'python webhook_setup.py test' to send a test event.")
+        logger.info(f"Webhook registered with uuid: {webhook_id}")
+        logger.info("Configuring per-webhook signing secret...")
+        secret_result = api_request(
+            "POST",
+            f"/v1/account/settings/webhook/{webhook_id}/rotate-secret",
+            token,
+            {"secret_key": webhook_secret},
+        )
+        print(f"Secret config result: {json.dumps(secret_result, indent=2)}")
+        logger.info("Run 'python webhook_setup.py test --webhook-id %s' to send a test event.", webhook_id)
     else:
-        logger.warning("Could not extract webhook ID from response. Check the output above.")
+        logger.warning("Could not extract webhook uuid from response. Check the output above.")
 
     return webhook_id
 
@@ -186,11 +193,11 @@ def cmd_test(args):
     if args.webhook_id:
         # Test a specific org-level webhook
         logger.info(f"Sending test event to webhook {args.webhook_id}...")
-        result = api_request("POST", f"/v1/account/settings/webhooks/{args.webhook_id}/test", token)
+        result = api_request("POST", f"/v1/account/settings/webhook/{args.webhook_id}/test", token)
     else:
-        # Test account-level webhook
-        logger.info("Sending test event via account-level webhook...")
-        result = api_request("POST", "/v1/webhook/test", token)
+        # Test account-level (legacy) webhook
+        logger.info("Sending test event via account-level (legacy) webhook...")
+        result = api_request("GET", "/v1/account/settings/test_webhook_endpoint", token)
 
     print(json.dumps(result, indent=2))
 
@@ -202,15 +209,17 @@ def cmd_delete(args):
         sys.exit("ERROR: --webhook-id is required.")
 
     logger.info(f"Deleting webhook {args.webhook_id}...")
-    result = api_request("DELETE", f"/v1/account/settings/webhooks/{args.webhook_id}", token)
+    result = api_request("DELETE", f"/v1/account/settings/webhook/{args.webhook_id}/delete", token)
     print(json.dumps(result, indent=2))
 
 
 def cmd_events(args):
-    """List available webhook event types."""
+    """List the event types delivered to a specific webhook."""
     token = get_token()
-    logger.info("Fetching available webhook event types...")
-    result = api_request("GET", "/v1/account/settings/webhooks/events", token)
+    if not args.webhook_id:
+        sys.exit("ERROR: --webhook-id is required (events are listed per webhook).")
+    logger.info(f"Fetching event types for webhook {args.webhook_id}...")
+    result = api_request("GET", f"/v1/account/settings/webhook/{args.webhook_id}/events", token)
     print(json.dumps(result, indent=2))
 
 
@@ -717,12 +726,19 @@ def cmd_auto(args):
         logger.info("Registering webhook with Ocrolus...")
         token = get_token()
 
-        # Configure secret
-        api_request("POST", "/v1/account/settings/webhooks/secret", token, {"secret": webhook_secret})
-
-        # Register webhook
+        # Register webhook first (org-level), then set its per-webhook secret
         result = api_request("POST", "/v1/account/settings/webhook", token, {"url": webhook_url})
         print(f"Registration result:\n{json.dumps(result, indent=2)}")
+
+        webhook_id = _extract_webhook_uuid(result)
+        if webhook_id:
+            api_request(
+                "POST",
+                f"/v1/account/settings/webhook/{webhook_id}/rotate-secret",
+                token,
+                {"secret_key": webhook_secret},
+            )
+            logger.info("Configured signing secret for webhook %s", webhook_id)
     else:
         print("\nCould not auto-detect ngrok URL. Register manually:")
         print(f"  python webhook_setup.py register --url <YOUR_NGROK_URL>/webhooks/ocrolus")
@@ -770,7 +786,8 @@ def main():
     p_del.add_argument("--webhook-id", required=True, help="Webhook ID to delete")
 
     # events
-    sub.add_parser("events", help="List available webhook event types")
+    p_events = sub.add_parser("events", help="List the event types delivered to a webhook")
+    p_events.add_argument("--webhook-id", required=True, help="Webhook uuid to list events for")
 
     # list
     sub.add_parser("list", help="List registered webhooks")

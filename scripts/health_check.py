@@ -241,7 +241,7 @@ def validate_webhooks(token: str) -> list:
         # 3. Send a test webhook via Ocrolus API
         try:
             resp = requests.post(
-                f"{BASE_URL}/v1/account/settings/webhooks/{wh_uuid}/test",
+                f"{BASE_URL}/v1/account/settings/webhook/{wh_uuid}/test",
                 headers={**headers, "Content-Type": "application/json"},
                 json={}, timeout=15,
             )

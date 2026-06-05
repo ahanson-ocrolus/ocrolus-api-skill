@@ -17,7 +17,7 @@ references/                  ← Detailed docs loaded on demand
    endpoints.md                 Full endpoint inventory (Books, Capture, Detect, ...)
    detect.md                    Authenticity scores, reason codes, signal taxonomy
    webhooks.md                  Event names + signature verification
-   openapi/                     Official OpenAPI 3.1 spec + Postman collection
+   openapi/                     Official OpenAPI 3.1 spec
 examples/                    ← Runnable example apps
    widget-quickstart/           Python/Flask embed of the Ocrolus widget
 requirements.txt
@@ -86,7 +86,7 @@ See [`scripts/README.md`](scripts/README.md) for details on each utility:
 - **`scripts/webhook_setup.py`** — spins up a local listener, opens an ngrok tunnel, registers the webhook with Ocrolus.
 - **`scripts/webhook_verifier.py`** — drop-in HMAC-SHA256 verification for production handlers.
 - **`examples/widget-quickstart/`** — Python/Flask implementation of the Ocrolus embeddable upload widget.
-- **`references/openapi/`** — official OpenAPI 3.1 YAML + Postman collection.
+- **`references/openapi/`** — official OpenAPI 3.1 YAML. (For an interactive collection, use the official Postman collection linked from <https://docs.ocrolus.com/reference>.)
 
 ## Ocrolus Documentation
 

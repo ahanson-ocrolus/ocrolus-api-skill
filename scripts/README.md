@@ -8,6 +8,7 @@ Executable utilities bundled with this skill. None are required to *use* the Ocr
 | `health_check.py` | Probes every documented endpoint on your tenant, emits HTML/JSON dashboard | Sanity-check before go-live; periodic monitoring; verifying credentials work |
 | `webhook_setup.py` | Local webhook listener + ngrok tunnel + auto-registration with Ocrolus | Setting up real-time event processing during development |
 | `webhook_verifier.py` | Drop-in HMAC-SHA256 verifier you can copy into your production handler | Production webhook receivers |
+| `check_endpoint_drift.py` | Asserts every API path in SKILL.md / references / scripts exists in the canonical `references/endpoints.md` | Pre-commit / CI gate against endpoint drift |
 
 All scripts read credentials from `OCROLUS_CLIENT_ID` / `OCROLUS_CLIENT_SECRET` environment variables.
 
@@ -36,6 +37,20 @@ python scripts/health_check.py --output-dir reports/
 ```
 
 The probe uses placeholder UUIDs for `{book_uuid}` / `{doc_uuid}` slots, so endpoints that strictly validate a resource ID will return HTTP 404 — that's expected on a brand-new tenant with no real data. Endpoints that route correctly with a placeholder return 200 with an envelope-wrapped error.
+
+## Endpoint drift guard
+
+`references/endpoints.md` is the canonical, live-validated inventory of API paths
+(the official OpenAPI spec is incomplete). This guard keeps every other file
+consistent with it:
+
+```bash
+python scripts/check_endpoint_drift.py    # exit 0 if consistent, 1 + a list on drift
+```
+
+Validate `endpoints.md` itself against your tenant with `health_check.py`; the
+guard only enforces that SKILL.md, the other references, and the scripts agree
+with it. No extra dependencies (standard library only).
 
 ## Webhook setup (development)
 

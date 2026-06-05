@@ -25,69 +25,115 @@ Ocrolus delivers event notifications via HTTP POST to your configured endpoint(s
 
 ## API Endpoints
 
+> Canonical paths live in `references/endpoints.md`; the tables below mirror them. Per-webhook org-level routes use the **singular** `webhook/{webhook_uuid}` with action suffixes (`/update`, `/delete`, `/test`, `/rotate-secret`); only the list route uses the **plural** `webhooks`. (Validated against the live API.)
+
 ### Organization-Level (recommended)
 
 | Operation | Method | Path |
 |-----------|--------|------|
 | Add Webhook | POST | `/v1/account/settings/webhook` |
 | List Webhooks | GET | `/v1/account/settings/webhooks` |
-| Retrieve Webhook | GET | `/v1/account/settings/webhooks/{webhook_id}` |
-| Update Webhook | PUT | `/v1/account/settings/webhooks/{webhook_id}` |
-| Delete Webhook | DELETE | `/v1/account/settings/webhooks/{webhook_id}` |
-| List Events | GET | `/v1/account/settings/webhooks/events` |
-| Test Webhook | POST | `/v1/account/settings/webhooks/{webhook_id}/test` |
-| Configure Secret | POST | `/v1/account/settings/webhooks/secret` |
+| Retrieve Webhook | GET | `/v1/account/settings/webhook/{webhook_uuid}` |
+| Update Webhook | POST | `/v1/account/settings/webhook/{webhook_uuid}/update` |
+| Delete Webhook | DELETE | `/v1/account/settings/webhook/{webhook_uuid}/delete` |
+| List Events | GET | `/v1/account/settings/webhook/{webhook_uuid}/events` |
+| Test Webhook | POST | `/v1/account/settings/webhook/{webhook_uuid}/test` |
+| Rotate Signing Secret | POST | `/v1/account/settings/webhook/{webhook_uuid}/rotate-secret` |
 
-### Account-Level
+### Account-Level (legacy)
 
 | Operation | Method | Path |
 |-----------|--------|------|
-| Configure | POST | `/v1/webhook/configure` |
-| Get Config | GET | `/v1/webhook/configuration` |
-| Test | GET / POST | `/v1/webhook/test` |
-| Configure Secret | POST | `/v1/webhook/secret` |
+| Configure | POST | `/v1/account/settings/update/webhook_endpoint` |
+| Get Config | GET | `/v1/account/settings/webhook_details` |
+| Test | GET | `/v1/account/settings/test_webhook_endpoint` |
+| Rotate Signing Secret | POST | `/v1/account/settings/webhook/rotate-secret` |
 
 ## Event Types
 
-The event type field is **`event_name`** (not `event_type`).
-
-### Document Events
-
-| Event Name | Description | When It Fires |
-|-----------|-------------|---------------|
-| `document.upload_succeeded` | Document uploaded and accepted | Immediately after upload |
-| `document.verification_succeeded` | OCR/processing complete | After document processing finishes |
-| `document.detect.signal_found` | Fraud signals detected | After fraud detection runs on the document |
+The event type field is **`event_name`** (not `event_type`). The authoritative list
+of available events is at
+<https://docs.ocrolus.com/docs/organization-level-webhook#available-events>; the
+full set is reproduced below.
 
 ### Book Events
 
-| Event Name | Description | When It Fires |
-|-----------|-------------|---------------|
-| `book.verified` | All documents in book verified | After all docs reach VERIFICATION_COMPLETE |
-| `book.analytics_v2.generated` | Cash flow analytics computed | After analytics processing |
-| `book.analytics_v2.completed` | Analytics processing complete | Alternative analytics completion event |
-| `book.detect.signal_found` | Book-level fraud summary | After all document fraud detection |
-| `book.completed` | All processing tasks done | Final event — ANALYTICS, CAPTURE, DETECT all complete |
+| Event Name | Description |
+|-----------|-------------|
+| `book.classified` | Book has been classified/categorized — **fetch `classification-summary` here** |
+| `book.verified` | Capture complete; documents verified or rejected — **fetch `/v2/book/{uuid}/forms` and analysis here** |
+| `book.analytics_v2.generated` | Analytics produced by the v2 analytics engine |
+| `book.analytics_completed` | Asynchronous analytics request completed |
+| `book.detect.signal_found` | Book contains documents with suspicious-activity signals |
+| `book.detect.signal_not_found` | Book contains no suspicious-activity signals |
+| `book.income.generated` | Book income calculation freshly generated |
+| `book.income.updated` | Book income manually edited or overridden |
+| `book.pacing.discrepancies_found` | Discrepancies found in Plaid-to-statement mapping |
+| `book.pacing.discrepancies_not_found` | No discrepancies in Plaid-to-statement mapping |
+| `book.completed` | Capture, Detect, Income, and Analytics all finished — **final event** |
+
+### Document Events
+
+| Event Name | Description |
+|-----------|-------------|
+| `document.upload_succeeded` / `document.upload_failed` | Single-document upload outcome |
+| `document.classification_succeeded` / `document.classification_failed` | Per-document classification outcome |
+| `document.verification_succeeded` / `document.verification_failed` | Per-document capture/verification outcome |
+| `document.detect.signal_found` / `document.detect.signal_not_found` | Per-document fraud outcome |
+| `document.detect.unable_to_process` | Document could not be processed through Detect |
+| `mixed_document.rejected` | A mixed document was rejected |
+
+### Image Group / Plaid Events
+
+| Event Name | Description |
+|-----------|-------------|
+| `image_group.upload_succeeded` / `image_group.upload_failed` | Image-group upload outcome |
+| `image_group.verification_succeeded` / `image_group.verification_failed` | Image-group verification outcome |
+| `plaid.upload_succeeded` / `plaid.upload_failed` | Plaid aggregator data upload outcome |
+
+### Book Copy (Encore) / Network / Org Events
+
+| Event Name | Description |
+|-----------|-------------|
+| `book.copy.request_received` | New book shared with your organization |
+| `book.copy.request_accepted` / `book.copy.request_rejected` | Recipient accepted/rejected a copy |
+| `book.copy.docs_added` | Additional documents shared under an existing copy |
+| `book.copy.kickout_evaluated` | Automated cash-flow kick-outs evaluated |
+| `network.book.created` | New application submitted for a monitored borrower |
+| `network.book.funded` | Monitored borrower has been funded |
+| `analytics.config_updated` | Analytics configuration updated for the org |
+
+> **Core-workflow events:** `book.classified` → fetch classification; `book.verified`
+> → fetch `/v2/book/{uuid}/forms` + analysis (cash-flow or income); `book.detect.signal_found`
+> → fetch book signals; `book.completed` is the final all-done marker.
 
 ### Processing Flow (Observed Order)
 
 ```
 Upload documents to book
     │
-    ├── document.upload_succeeded        (per document, immediate)
+    ├── document.upload_succeeded          (per document, immediate)
     │
-    ├── document.verification_succeeded  (per document, after OCR)
+    ├── document.classification_succeeded  (per document, after classify)
     │
-    ├── book.verified                    (book-level, all docs done)
+    ├── book.classified                    (book-level, all docs classified)  → classification-summary
     │
-    ├── book.analytics_v2.generated      (cash flow analytics ready)
+    ├── document.verification_succeeded    (per document, after capture)
     │
-    ├── document.detect.signal_found     (per document, fraud signals)
+    ├── book.verified                      (book-level, all docs verified)     → /v2/book/{uuid}/forms + analysis
     │
-    ├── book.detect.signal_found         (book-level fraud summary)
+    ├── book.analytics_v2.generated        (cash flow analytics ready)
     │
-    └── book.completed                   (all tasks: ANALYTICS, CAPTURE, DETECT)
+    ├── document.detect.signal_found       (per document, fraud signals)
+    │
+    ├── book.detect.signal_found           (book-level fraud summary)          → /v2/detect/book/{uuid}/signals
+    │
+    └── book.completed                     (all tasks: CAPTURE, DETECT, INCOME, ANALYTICS)
 ```
+
+> Analytics/income endpoints (`summary`, `enriched_txns`, `cash_flow_features`,
+> `income-calculations`) return **HTTP 425 "Too Early"** until generated — wait for
+> `book.analytics_v2.generated` (or `book.completed`) rather than calling them at `book.verified`.
 
 ### Encore / Book Copy Events
 - `book.copy.request_accepted` — recipient accepted book copy
@@ -162,7 +208,7 @@ Every webhook payload includes these common fields:
 }
 ```
 
-**Note:** The fraud webhook only signals that fraud was detected. To get specific reason codes and authenticity scores, call `GET /v2/detect/document/{doc_uuid}/signals`.
+**Note:** The fraud webhook only signals that fraud was detected. To get specific reason codes and authenticity scores, call `GET /v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals`.
 
 ## Webhook Headers
 
@@ -175,7 +221,7 @@ Every webhook payload includes these common fields:
 
 ## Signature Verification (HMAC-SHA256)
 
-Configure a signing secret first (via the dashboard, or via `POST /v1/account/settings/webhooks/secret` if your tenant has the API enabled). Until a secret is configured, deliveries arrive without a `Webhook-Signature` header — handlers should log a warning rather than reject these events.
+Configure a signing secret first (via the dashboard, or via `POST /v1/account/settings/webhook/{webhook_uuid}/rotate-secret` if your tenant has the API enabled). Until a secret is configured, deliveries arrive without a `Webhook-Signature` header — handlers should log a warning rather than reject these events.
 
 ### Verification Algorithm
 
@@ -288,4 +334,4 @@ def handle_ocrolus_webhook():
 5. **Mixing webhook types** -- Only org-level OR account-level can be active, not both.
 6. **Parsing body before verification** -- Verify against raw bytes, then parse JSON.
 7. **Hardcoded secrets** -- Use environment variables or a secrets manager.
-8. **Expecting fraud details in webhook** -- The webhook only signals detection. Call `/v2/detect/document/{uuid}/signals` for reason codes.
+8. **Expecting fraud details in webhook** -- The webhook only signals detection. Call `/v2/detect/uploaded_doc/{uploaded_doc_uuid}/signals` for reason codes.
