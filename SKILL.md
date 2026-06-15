@@ -69,18 +69,25 @@ Persist both. v1 endpoints reject UUIDs; v2 endpoints reject integer pks. Where 
 
 ## Processing Mode — `book_class`
 
-Set `book_class` **when creating the book** (`POST /v1/book/add`). It cannot be changed after creation. Map the user's natural-language request to one of these four values:
+`book_class` is a parameter on **Create Book** (`POST /v1/book/add`) and **Update Book** (`POST /v1/book/update`) that controls **how the book processes the documents uploaded to it**. Set it at book creation. There are four valid values — and choosing between them is one of the most important decisions in the integration.
 
-| User says… | `book_class` value | What it means |
-|------------|--------------------|---------------|
-| "instant", "instantly", "machine only", "automated", "no human review", "fast", "Instant" | **`INSTANT`** | Machine-only processing through the full pipeline (classify → capture → analyze). Fastest result, no human verification step. |
-| "complete", "HITL", "human in the loop", "human verification", "human-verified", "highest accuracy", "Complete" | **`COMPLETE`** | Full pipeline with human review of low-confidence fields. Slower but higher accuracy. **Default when `book_class` is omitted.** |
-| "classify only", "stop after classification", "just classify", "classification only", "no capture" | **`INSTANT_CLASSIFY_ONLY`** *(rare)* | Stops processing after classification. Listen for the `book.classified` webhook and route each document yourself based on its `form_type`. |
-| "ISO app capture only", "classify everything, capture ISO" | **`INSTANT_CLASSIFY_ISO_CAPTURE`** *(rare)* | Same as `INSTANT_CLASSIFY_ONLY` for every document **except ISO applications**, which continue through capture. Listen for `book.classified` for the stops-at-classify docs, and `book.verified` to know the ISO app finished capture. |
+**The two you'll almost always use** — both run the **full pipeline** (Classify → Capture → Analysis → Detect):
 
-Other values (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `individual` / `business`) return `400 Invalid dictionary value @ data["book_class"]`.
+| Value | Processing | Use when |
+|-------|-----------|----------|
+| **`INSTANT`** | Full pipeline, **machine-only** (no human review). Fastest. | The user wants automated / instant / no-human-review processing. |
+| **`COMPLETE`** | Full pipeline, **human-in-the-loop** verification of low-confidence fields. Slower, highest accuracy. **Default when `book_class` is omitted.** | The user wants human-verified / highest-accuracy results. |
 
-**Don't use `INSTANT_CLASSIFY_ONLY` or `INSTANT_CLASSIFY_ISO_CAPTURE` unless the user explicitly asks for that "stop-after-classify" workflow** — they're for orchestrators that need to inspect documents and decide what to do next based on form type. For ordinary processing, default to `INSTANT` or `COMPLETE`.
+**The two rare ones** — they **stop the pipeline early** and exist only for orchestrators that classify first and decide what to do per document. **Use these very rarely, and confirm thoroughly with the user before choosing one:**
+
+| Value | Processing |
+|-------|-----------|
+| **`INSTANT_CLASSIFY_ONLY`** *(rare)* | Stops after **Classification**. No capture/analysis/detect. Route each doc yourself off `book.classified` + `form_type`. |
+| **`INSTANT_CLASSIFY_ISO_CAPTURE`** *(rare)* | Stops after **Classification**, except ISO applications also run **Capture**. |
+
+> **If the request doesn't make the processing mode clear, ask the user** — don't silently guess between INSTANT and COMPLETE (machine-only vs human-verified is a material difference). And never reach for an `INSTANT_CLASSIFY_*` value unless the user explicitly describes a stop-after-classify orchestration; confirm before using one.
+
+Only these four values are valid. Anything else — `CLASSIFY`, `INSTANT_CLASSIFY`, free-text like `individual` / `business` — returns `400 Invalid dictionary value @ data["book_class"]`.
 
 `book_type` is a separate field and only accepts `DEFAULT` or `INSTANT_ML`. If you only need a normal processing book, omit it (the API defaults to `DEFAULT`).
 
@@ -420,7 +427,7 @@ OCROLUS_WIDGET_CLIENT_SECRET=...
 ## Things People Miss
 
 - **The endpoint is `POST /v1/book/add`** — not `/v1/book/create`, `/v1/books`, or `/v1/book`. Other paths return 404 or the wrong action.
-- **`book_class` is set at book creation and cannot be changed later.** Four accepted values: `INSTANT` (machine-only, full pipeline), `COMPLETE` (HITL, full pipeline; default), and the rare `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE` for orchestrators that stop processing at classification and use webhooks (`book.classified`, `book.verified`) to route each document themselves. See the "Processing Mode" section above for the full synonym map. The API rejects everything else (`CLASSIFY`, `INSTANT_CLASSIFY`, `individual`, `business`).
+- **`book_class` controls how the book processes uploads; set it at book creation.** Four accepted values: `INSTANT` (full pipeline, machine-only), `COMPLETE` (full pipeline, HITL; default), and the rare `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE` that stop the pipeline early (use rarely; confirm with the user first). **If the user's request doesn't clearly imply machine-only vs human-verified, ask.** See the "Processing Mode" section above. The API rejects everything else (`CLASSIFY`, `INSTANT_CLASSIFY`, `individual`, `business`).
 - **`book_type` is a different field** that only accepts `DEFAULT` or `INSTANT_ML`. Don't confuse it with `book_class`. If unsure, omit it.
 - **Auth body must be form-encoded.** JSON-encoded bodies — or adding an `audience` parameter — return `403 unauthorized_client`.
 - **Upload form field is `pk` (or `book_uuid`)** — not `book_pk`. Using `book_pk` returns "Required pk or book uuid".
