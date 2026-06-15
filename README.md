@@ -13,10 +13,12 @@ scripts/                     ← Executable code
    health_check.py              Probe every endpoint on your tenant
    webhook_setup.py             Local listener + ngrok tunnel + auto-registration
    webhook_verifier.py          HMAC-SHA256 verifier you can drop into production
+   check_endpoint_drift.py      Drift guard: every referenced path must exist in endpoints.md
 references/                  ← Detailed docs loaded on demand
    endpoints.md                 Full endpoint inventory (Books, Capture, Detect, ...)
    detect.md                    Authenticity scores, reason codes, signal taxonomy
    webhooks.md                  Event names + signature verification
+   workflows/                   End-to-end recipes (smb-cash-flow.md; mortgage later)
    openapi/                     Official OpenAPI 3.1 spec
 examples/                    ← Runnable example apps
    widget-quickstart/           Python/Flask embed of the Ocrolus widget

@@ -398,6 +398,7 @@ Widget auth uses separate credentials (`OCROLUS_WIDGET_CLIENT_ID` / `OCROLUS_WID
 
 | If you are… | Read |
 |-------------|------|
+| Building the **SMB cash-flow** pipeline end-to-end | `references/workflows/smb-cash-flow.md` |
 | Trying endpoints interactively | The Ocrolus Postman collection (linked from <https://docs.ocrolus.com/reference>) |
 | Looking up a single endpoint signature | `references/endpoints.md` |
 | Building fraud workflows | `references/detect.md` |

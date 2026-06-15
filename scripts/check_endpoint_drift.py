@@ -33,7 +33,7 @@ ALLOWED_EXTRA = {
 }
 
 # Files whose path references must stay consistent with endpoints.md.
-SCAN_GLOBS = ["SKILL.md", "references/*.md", "scripts/*.py"]
+SCAN_GLOBS = ["SKILL.md", "references/**/*.md", "scripts/*.py"]
 # ...except these (the canonical file itself, this guard, and the vendored spec).
 SKIP_NAMES = {CANONICAL.name, Path(__file__).name}
 
