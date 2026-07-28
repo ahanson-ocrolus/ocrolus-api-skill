@@ -165,8 +165,9 @@ class OcrolusClient:
         Public docs path: POST /v1/book/add. Returns the envelope
         ``{ "status": 200, "response": { "pk": int, "uuid": str, ... } }``.
 
-        Set ``book_class`` at creation — it cannot be changed afterwards. Map the
-        user's natural-language request:
+        Set ``book_class`` at creation; it can also be changed afterwards via
+        :meth:`update_book` (``POST /v1/book/update``) — e.g. to upgrade a book
+        from ``INSTANT`` to ``COMPLETE``. Map the user's natural-language request:
           - "instant" / "instantly" / "machine only" / "no human review"
             -> ``book_class="INSTANT"``
           - "complete" / "HITL" / "human in the loop" / "human verification"
@@ -227,7 +228,12 @@ class OcrolusClient:
         return self._get("/v1/book/status", params=params)
 
     def update_book(self, book_pk: Optional[int] = None, book_uuid: Optional[str] = None, **kwargs) -> dict:
-        """Update Book properties. Body accepts pk or book_uuid plus any updatable fields."""
+        """Update Book properties. Body accepts pk or book_uuid plus any updatable fields.
+
+        This is the public docs' "Update Book" endpoint and the way to change
+        ``book_class`` after creation — e.g. ``update_book(book_pk=pk, book_class="COMPLETE")``
+        to upgrade an ``INSTANT`` book to HITL, or to continue a classify-only book.
+        """
         body: dict[str, Any] = dict(kwargs)
         if book_pk is not None:
             body["pk"] = book_pk
@@ -382,6 +388,13 @@ class OcrolusClient:
         """Upgrade a document's processing type.
 
         Public docs path: POST /v1/document/upgrade with body {doc_pk | doc_uuid, upgrade_type}.
+
+        Upgrades a single document's processing tier. ``upgrade_type`` is the
+        target tier: ``"INSTANT"`` (machine-only) or ``"COMPLETE"`` (HITL); the
+        document re-enters processing and the usual capture/analytics webhooks
+        fire afterward. To upgrade a whole book instead (e.g. continue a
+        classify-only book, or promote ``INSTANT`` → ``COMPLETE``), change its
+        ``book_class`` via :meth:`update_book`.
         """
         body: dict[str, Any] = {"upgrade_type": upgrade_type}
         if doc_uuid is not None:
@@ -394,7 +407,10 @@ class OcrolusClient:
                                 mixed_doc_pk: Optional[int] = None) -> dict:
         """Upgrade a mixed document's processing type.
 
-        Public docs path: POST /v1/document/mixed/upgrade.
+        Public docs path: POST /v1/document/mixed/upgrade. Mixed-document
+        counterpart of :meth:`upgrade_document` — use this for documents
+        uploaded via ``POST /v1/book/upload/mixed``. ``upgrade_type`` is
+        ``"INSTANT"`` or ``"COMPLETE"``.
         """
         body: dict[str, Any] = {"upgrade_type": upgrade_type}
         if mixed_doc_uuid is not None:
@@ -814,7 +830,10 @@ class OcrolusClient:
     def list_org_webhooks(self) -> dict:
         """List all org-level webhooks.
 
-        Public docs path: GET /v1/account/settings/webhooks.
+        Public docs path: GET /v1/account/settings/webhooks. The webhook list
+        is nested in the envelope under ``response.webhooks`` (a list), e.g.
+        ``client.list_org_webhooks()["response"]["webhooks"]`` — not a bare
+        list at ``response``.
         """
         return self._get("/v1/account/settings/webhooks")
 
@@ -840,10 +859,14 @@ class OcrolusClient:
         return self._delete(f"/v1/account/settings/webhook/{webhook_uuid}/delete")
 
     def list_org_webhook_events(self, webhook_uuid: str) -> dict:
-        """List the events a specific org-level webhook is subscribed to.
+        """List webhook event types with this webhook's subscription state.
 
         Public docs path: GET /v1/account/settings/webhook/{webhook_uuid}/events.
-        (Per-webhook subscription list, not a global event-type catalogue.)
+        Returns the **full event-type catalogue** (every available event), each
+        annotated with a ``should_process`` flag indicating whether THIS webhook
+        is subscribed to it — it is not a filtered list of only the subscribed
+        events. To find what this webhook actually delivers, filter to entries
+        where ``should_process`` is true.
         """
         return self._get(f"/v1/account/settings/webhook/{webhook_uuid}/events")
 
