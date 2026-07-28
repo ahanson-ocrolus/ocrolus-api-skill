@@ -69,7 +69,7 @@ Persist both. v1 endpoints reject UUIDs; v2 endpoints reject integer pks. Where 
 
 ## Processing Mode — `book_class`
 
-Set `book_class` **when creating the book** (`POST /v1/book/add`). It cannot be changed after creation. Map the user's natural-language request to one of these four values:
+Set `book_class` **when creating the book** (`POST /v1/book/add`). You can also change it later with **Update Book** (`POST /v1/book/update`) — e.g. to upgrade a book from `INSTANT` to `COMPLETE` (see "Upgrading a book" below). Map the user's natural-language request to one of these four values:
 
 | User says… | `book_class` value | What it means |
 |------------|--------------------|---------------|
@@ -83,6 +83,28 @@ Other values (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `indivi
 **Don't use `INSTANT_CLASSIFY_ONLY` or `INSTANT_CLASSIFY_ISO_CAPTURE` unless the user explicitly asks for that "stop-after-classify" workflow** — they're for orchestrators that need to inspect documents and decide what to do next based on form type. For ordinary processing, default to `INSTANT` or `COMPLETE`.
 
 `book_type` is a separate field and only accepts `DEFAULT` or `INSTANT_ML`. If you only need a normal processing book, omit it (the API defaults to `DEFAULT`).
+
+### Upgrading a book (changing `book_class` after creation)
+
+To promote a book to fuller processing — e.g. `INSTANT` → `COMPLETE`, or to continue a classify-only book (`INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE`) into the full pipeline — change its `book_class` with **Update Book**:
+
+```
+POST /v1/book/update
+{"pk": 71250194, "book_class": "COMPLETE"}   # or "book_uuid": "..."
+```
+
+(The public docs call this endpoint [Update Book](https://docs.ocrolus.com/reference/update-book); there is no separately-named "Upgrade Book" route — `book_class` is changed through Update Book.) The book re-enters processing under the new class and the usual capture/analytics webhooks fire afterward (`book.verified`, `book.completed`).
+
+The upgrade is **state-gated**: an empty book returns `400 "Cannot upgrade an empty book"`, and a book with documents still in flight returns `400 "Book cannot be upgraded while its document(s) are still processing"`. Upload documents and wait for the current stage to settle before upgrading.
+
+> **`book_class` vs `document_class` (AutoUpgrade).** `book_class` is the book-level intent; each doc also has a **`document_class`** (the tier actually used, on `docs[]`). A `COMPLETE` book does **not** force every doc through HITL — verified live: a clean doc in a `COMPLETE` book reached `VERIFICATION_COMPLETE` in seconds with **`document_class: "INSTANT"`** and no human review. Ocrolus attempts each document with **Instant first** and escalates to `COMPLETE` (HITL) **only when the instant result needs review** ("AutoUpgrade"). So expect `document_class: "INSTANT"` on docs even in a `COMPLETE` book. (Whether AutoUpgrade is on may be an org/book configuration — confirm for your tenant.)
+
+For a finer-grained promotion of **individual documents** rather than the whole book, use the per-document upgrade endpoints (`upgrade_type` = `INSTANT` or `COMPLETE`):
+
+| Operation | Method & Path | Body |
+|-----------|---------------|------|
+| Upgrade Document | `POST /v1/document/upgrade` | `doc_pk` **or** `doc_uuid` (exactly one), `upgrade_type` |
+| Upgrade Mixed Document | `POST /v1/document/mixed/upgrade` | `mixed_doc_pk` **or** `mixed_doc_uuid` (exactly one), `upgrade_type` |
 
 ## 5-Minute Quick Start
 
@@ -171,12 +193,30 @@ The **analytics and income endpoints return `HTTP 425 "Too Early"` until generat
 **`GET /v1/book/info`** *(query `pk` or `book_uuid`)*
 Book metadata + the lists of uploaded docs and bank accounts (each with processing status). **Call this first** after upload to confirm what's in a book and whether processing finished. Lightweight; precedes drilling into forms/transactions/analytics.
 
+> **`docs[]` here does NOT carry the document *type*.** Each `docs[]` entry has `pk`, `status`, `name`, `pages`, `md5`, `mixed_uploaded_doc_pk`, and `document_class` — but **no `form_type`**. Don't confuse `document_class` (the processing *tier*: `INSTANT` / `COMPLETE`) with `form_type` (the document *kind*: `BANK_STATEMENT` / `PAYSTUB` / …). To get the document type, use `classification-summary` or `/v1/book/forms`. **Timing:** the document *type* is ready at `book.classified`; captured *field* data is ready at `book.verified`. (`/v1/book/status` mirrors this shape and additionally surfaces rejection reasons — see below.)
+
 ### Classify
 
 **`GET /v2/book/{book_uuid}/classification-summary`**
 Returns `forms[]` with `form_type` (e.g. `BANK_STATEMENT`, `PAYSTUB`, `W2`), `status` (e.g. `COMPLETED`, `REJECTED`), and `uniqueness_values` (key fields extracted at classify-time with confidence scores). Use this to answer "what kinds of documents are these?", "did any docs get rejected?", or to drive the orchestration when `book_class` is `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE`.
 
 > ⚠️ The `form_uuid` returned here is a **v2** UUID and is NOT compatible with `GET /v1/form`. To fetch raw fields per form when starting from this endpoint, use `GET /v2/book/{book_uuid}/forms` instead.
+
+### Why a document was rejected (rejection reasons)
+
+To find **why** a document was rejected — at classification *or* capture — call **`GET /v1/book/status`** and read the **`docs[]`** entry (keyed by doc `uuid`/`pk`):
+
+- **`rejection_reason`** — the reason code/label (e.g. `INVALID DOCUMENT`, `INSTANT NOT SUPPORTED`); strings match the [Rejection Reasons](https://docs.ocrolus.com/docs/rejection-reasons) catalog.
+- **`rejection_reason_description`** — a fuller cause when available (e.g. `NO TRANSACTIONS FOUND`). Sometimes `null` even when `rejection_reason` is set.
+
+Verified live (INSTANT books): **these fields populate under `INSTANT`** — no human verification required, unlike the legacy `bank_accounts.…periods[].*_recon_error_reason` fields on `/v1/transaction` (which only populate under HITL — don't rely on them). Key behaviors:
+
+- **The reason rides on `docs[]`, not `mixed_docs[]`.** The `mixed_doc` is the upload container and typically ends `COMPLETED` even when its child doc is rejected; `docs[].rejection_reason` carries the reason for *both* classification-origin and capture-origin rejections.
+- **These keys appear only when the doc is `REJECTED`.** Non-rejected docs omit `rejection_reason` / `rejection_reason_description` entirely — don't assume the keys are always present.
+- `mixed_docs[]` exposes a `rejection_reason` field (no `rejection_reason_description`); in practice it stays `null` because the container completes.
+- `classification-summary` is unreliable for this — it sometimes carries `rejection_reason` and sometimes returns `form_type: UNKNOWN` with no reason. Use `/v1/book/status`.
+
+> ⚠️ **The bundled OpenAPI under-documents some live fields.** `/v1/book/info` and `/v1/book/status` return `rejection_reason` (and `docs[]` also `rejection_reason_description`) on rejected docs at runtime, even though the OpenAPI `BookInfoDocument` schema omits them. Treat the spec as a floor, not a ceiling — **don't assert a field is absent just because it isn't in the schema; confirm against a live payload.**
 
 ### Capture (extracted fields)
 
@@ -261,7 +301,9 @@ Endpoints below mirror the structure at <https://docs.ocrolus.com/reference>. Pr
 | Mixed-document classification | `GET /v2/mixed-document/{mixed_doc_uuid}/classification-summary` |
 | Grouped mixed-doc summary | `GET /v2/index/mixed-doc/{mixed_doc_uuid}/summary` |
 
-Each classification carries a confidence score (0–1). Uniqueness Values (UV) extract key fields during classification (e.g., employer + employee name from a pay stub).
+`classification-summary` returns `forms[]`, where each item's `form_type` is a **`FormTypeDetails` object** (`{name, account_type, display_name}`) — not a bare string — and there is **no form-level `confidence` field**. Confidence lives **per uniqueness value**: `uniqueness_values[].confidence` (0–1). Uniqueness Values (UV) are the key fields extracted during classification (e.g., employer + employee name from a pay stub). The bundled OpenAPI spec (`references/openapi/…yaml`, schemas `ClassificationSummaryItem` / `FormTypeDetails` / `UniquenessValue`) is authoritative for these shapes.
+
+In practice you rarely need the confidence score: Ocrolus rejects documents it isn't confident about during classification, surfacing them as `status: REJECTED` with a `rejection_reason`. Key your routing logic off each item's `status`, not its confidence.
 
 ### Capture
 
@@ -419,7 +461,7 @@ OCROLUS_WIDGET_CLIENT_SECRET=...
 ## Things People Miss
 
 - **The endpoint is `POST /v1/book/add`** — not `/v1/book/create`, `/v1/books`, or `/v1/book`. Other paths return 404 or the wrong action.
-- **`book_class` is set at book creation and cannot be changed later.** Four accepted values: `INSTANT` (machine-only, full pipeline), `COMPLETE` (HITL, full pipeline; default), and the rare `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE` for orchestrators that stop processing at classification and use webhooks (`book.classified`, `book.verified`) to route each document themselves. See the "Processing Mode" section above for the full synonym map. The API rejects everything else (`CLASSIFY`, `INSTANT_CLASSIFY`, `individual`, `business`).
+- **`book_class` is set at book creation but can be changed later via Update Book** (`POST /v1/book/update` with a new `book_class`) — e.g. to upgrade `INSTANT` → `COMPLETE` or to continue a classify-only book into full processing. Four accepted values: `INSTANT` (machine-only, full pipeline), `COMPLETE` (HITL, full pipeline; default), and the rare `INSTANT_CLASSIFY_ONLY` / `INSTANT_CLASSIFY_ISO_CAPTURE` for orchestrators that stop processing at classification and use webhooks (`book.classified`, `book.verified`) to route each document themselves. See the "Processing Mode" section above for the full synonym map and the "Upgrading a book" steps. The API rejects everything else (`CLASSIFY`, `INSTANT_CLASSIFY`, `individual`, `business`).
 - **`book_type` is a different field** that only accepts `DEFAULT` or `INSTANT_ML`. Don't confuse it with `book_class`. If unsure, omit it.
 - **Auth body must be form-encoded.** JSON-encoded bodies — or adding an `audience` parameter — return `403 unauthorized_client`.
 - **Upload form field is `pk` (or `book_uuid`)** — not `book_pk`. Using `book_pk` returns "Required pk or book uuid".

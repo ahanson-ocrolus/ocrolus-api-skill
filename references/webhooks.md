@@ -221,7 +221,9 @@ Every webhook payload includes these common fields:
 
 ## Signature Verification (HMAC-SHA256)
 
-Configure a signing secret first (via the dashboard, or via `POST /v1/account/settings/webhook/{webhook_uuid}/rotate-secret` if your tenant has the API enabled). Until a secret is configured, deliveries arrive without a `Webhook-Signature` header — handlers should log a warning rather than reject these events.
+Configure a signing secret first (via the dashboard, or via `POST /v1/account/settings/webhook/{webhook_uuid}/rotate-secret` if your tenant has the API enabled). Until a secret is configured, deliveries arrive without a `Webhook-Signature` header.
+
+> ⚠️ **Security:** once a secret IS configured, an unsigned delivery must be **rejected**, not accepted. Accepting a request with no signature header when you hold a secret is a trivial bypass — an attacker just omits the header. The `secret` you pass in is the signal that a secret is configured, so treat a missing signature as a failure. Only accept-and-warn on unsigned deliveries while you have **no** secret set (e.g. during initial bring-up).
 
 ### Verification Algorithm
 
@@ -234,9 +236,11 @@ def verify_webhook(headers: dict, body: bytes, secret: str) -> bool:
     request_id = headers.get("Webhook-Request-Id", "")
     received_signature = headers.get("Webhook-Signature", "")
 
-    # If no signature header, the secret may not be configured
+    # A secret is configured (it was passed in), so an unsigned delivery
+    # is not trustworthy — reject it. Only skip verification when you have
+    # deliberately not configured a secret yet.
     if not received_signature:
-        return True  # Accept but log warning
+        return False
 
     signed_message = f"{timestamp}.{request_id}.".encode() + body
 

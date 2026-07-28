@@ -33,7 +33,7 @@ The body **must** be form-encoded (`application/x-www-form-urlencoded`). JSON bo
 
 #### `book_class` values
 
-`book_class` is set at book creation and cannot be changed later. Map the user's natural-language request to one of:
+`book_class` is set at book creation and can be changed later via **Update Book** (`POST /v1/book/update` with a new `book_class`) — e.g. to upgrade `INSTANT` → `COMPLETE`. Map the user's natural-language request to one of:
 
 - **`INSTANT`** — machine-only processing through the full pipeline (classify → capture → analyze). Synonyms: "instant", "instantly", "machine only", "automated", "no human review", "fast".
 - **`COMPLETE`** — full pipeline with human verification of low-confidence fields. Default when `book_class` is omitted. Synonyms: "complete", "HITL", "human in the loop", "human verification", "human-verified", "highest accuracy".
@@ -55,6 +55,11 @@ Any other value (`CLASSIFY`, `INSTANT_CLASSIFY`, free-text descriptors like `ind
 | Book from loan | GET | `/v2/los-connect/encompass/book` | **Query:** `loan_id` and/or `loan_number` |
 
 `/v1/book/add` returns both `pk` (integer) and `uuid` (UUID). Persist both — v1 endpoints typically take `pk`, v2 endpoints take `book_uuid`.
+
+**`/v1/book/status` and `/v1/book/info` response shape (live-verified):** both return `docs[]` (capture-lifecycle) and `mixed_docs[]` (classification-lifecycle).
+- `docs[]` entry: `pk`, `uuid`, `name`, `pages`, `md5`, `status`, `document_class`, `image_group_pk`, `mixed_uploaded_doc_pk` — **no `form_type`** (get the document type from `classification-summary` or `/v1/book/forms`). When `status == "REJECTED"`, the entry **also** includes `rejection_reason` and `rejection_reason_description` (absent otherwise). These populate under `INSTANT`.
+- `mixed_docs[]` entry: includes `rejection_reason` (no `rejection_reason_description`); typically `null` since the container completes.
+- ⚠️ The bundled OpenAPI's `BookInfoDocument` omits `rejection_reason`/`rejection_reason_description`, but the live API returns them on rejected docs. The spec is a floor — confirm field presence against a live payload, don't assert absence from schema.
 
 **Undocumented aliases the live API still answers (don't rely on these in new code):**
 - `GET /v1/book/{pk}` (use `/v1/book/info?pk=` instead)
